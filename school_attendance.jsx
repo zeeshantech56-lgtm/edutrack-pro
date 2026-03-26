@@ -1196,6 +1196,7 @@ export default function App() {
   const [students, setStudents]     = useState(INIT_STUDENTS);
   const [attendance, setAttendance] = useState(INIT_ATTENDANCE);
   const [dbLoaded, setDbLoaded]     = useState(false);
+  const [dbError, setDbError]       = useState("");
 
   useEffect(() => {
     if (!db) { setDbLoaded(true); return; } // Fallback if no firebase script
@@ -1206,14 +1207,14 @@ export default function App() {
     unsubS = db.collection("edutrack").doc("students_v2").onSnapshot(doc => {
       if (doc.exists) setStudents(doc.data().data);
       else db.collection("edutrack").doc("students_v2").set({ data: INIT_STUDENTS });
-    });
+    }, err => { setDbError(err.message); setDbLoaded(true); });
     
     unsubA = db.collection("edutrack").doc("attendance_v2").onSnapshot(doc => {
       if (doc.exists) setAttendance(doc.data().data);
       else db.collection("edutrack").doc("attendance_v2").set({ data: INIT_ATTENDANCE });
       setDbLoaded(true);
       setSyncing(false);
-    });
+    }, err => { setDbError(err.message); setDbLoaded(true); });
     
     return () => { unsubS(); unsubA(); };
   }, []);
@@ -1240,6 +1241,24 @@ export default function App() {
   const today = fmtDate(new Date());
 
   if (!dbLoaded) return <><GlobalStyles /><LoadingOverlay /></>;
+  if (dbError) return (
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: C.bg, color: C.text, padding: 20 }}>
+      <div style={{ background: "#21262d", padding: "30px", borderRadius: 12, border: "2px solid #f85149", maxWidth: 600 }}>
+         <h2 style={{ color: "#f85149", margin: "0 0 8px 0" }}>Firebase Connection Blocked</h2>
+         <p style={{ margin: "0 0 16px 0", lineHeight: 1.5 }}>Your application is working perfectly, but a security setting in your <strong>Firebase Database</strong> is blocking the app from reading your data!</p>
+         <p style={{ color: "#8b949e", fontSize: 13, background: "#0d1117", padding: 10, borderRadius: 6, margin: "0 0 20px 0" }}><i>Error: {dbError}</i></p>
+         <p style={{ margin: "0 0 10px 0", fontWeight: 600 }}>To fix this instantly, login to your Firebase Console &rarr; Firestore Database &rarr; Rules, and paste EXACTLY this into the editor:</p>
+         <pre style={{ background: "#0d1117", padding: "16px", borderRadius: 6, color: "#58a6ff", fontSize: 14, border: "1px solid #30363d", overflowX: "auto", margin: "0 0 20px 0" }}>{`service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}`}</pre>
+         <button onClick={() => window.location.reload()} style={{ background: "#58a6ff", color: "#fff", border: "none", padding: "12px", borderRadius: 6, cursor: "pointer", fontWeight: "bold", width: "100%", fontSize: 14 }}>I've published the new rules, Try Again!</button>
+      </div>
+    </div>
+  );
   if (!user) return <><GlobalStyles /><LoginScreen onLogin={setUser} /></>;
 
   const nav = [
