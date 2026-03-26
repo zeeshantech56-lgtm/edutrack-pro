@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>EduTrack Pro</title>
+  <title>EduTrack Pro (Live)</title>
   
   <script src="https://unpkg.com/react@18.2.0/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js" crossorigin></script>
@@ -23,6 +23,28 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo, useCallback } = window.React;
     const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, Legend, LineChart, Line } = window.Recharts;
+    
+    class ErrorBoundary extends window.React.Component {
+      constructor(props) { super(props); this.state = { error: null, errorInfo: null }; }
+      static getDerivedStateFromError(error) { return { error }; }
+      componentDidCatch(error, errorInfo) { this.setState({ errorInfo }); console.error("Caught by ErrorBoundary:", error, errorInfo); }
+      render() {
+        if (this.state.error) {
+          return (
+            <div style={{ padding: 40, color: "#f85149", background: "#0d1117", minHeight: "100vh" }}>
+              <h2>Fatal React Error</h2>
+              <p style={{ color: "#e6edf3" }}>A massive crash occurred inside the application component.</p>
+              <pre style={{ whiteSpace: "pre-wrap", background: "#161b22", padding: 20, borderRadius: 8, border: "1px solid #f85149" }}>
+                {this.state.error.toString()}
+                {"\n"}
+                {this.state.errorInfo?.componentStack}
+              </pre>
+            </div>
+          );
+        }
+        return this.props.children;
+      }
+    }
     
 
 
@@ -1347,7 +1369,7 @@ function App() {
 
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    root.render(<ErrorBoundary><App /></ErrorBoundary>);
   </script>
 </body>
 </html>
