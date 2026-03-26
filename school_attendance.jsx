@@ -89,7 +89,7 @@ const INIT_STUDENTS = (() => {
 const INIT_ATTENDANCE = (() => {
   const att = {};
   const today = new Date();
-  for (let back = 92; back >= 0; back--) {
+  for (let back = 14; back >= 0; back--) {
     const d = new Date(today);
     d.setDate(today.getDate() - back);
     const ds = fmtDate(d);
@@ -1174,6 +1174,7 @@ let db = null;
 if (typeof window !== "undefined" && window.firebase) {
   if (!window.firebase.apps.length) window.firebase.initializeApp(firebaseConfig);
   db = window.firebase.firestore();
+  db.enablePersistence({ synchronizeTabs: true }).catch(err => console.warn("Caching error", err));
 }
 
 function LoadingOverlay() {
@@ -1202,14 +1203,14 @@ export default function App() {
     let unsubS = () => {}, unsubA = () => {};
     
     // Subscribe to real-time updates from Firestore
-    unsubS = db.collection("edutrack").doc("students").onSnapshot(doc => {
+    unsubS = db.collection("edutrack").doc("students_v2").onSnapshot(doc => {
       if (doc.exists) setStudents(doc.data().data);
-      else db.collection("edutrack").doc("students").set({ data: INIT_STUDENTS });
+      else db.collection("edutrack").doc("students_v2").set({ data: INIT_STUDENTS });
     });
     
-    unsubA = db.collection("edutrack").doc("attendance").onSnapshot(doc => {
+    unsubA = db.collection("edutrack").doc("attendance_v2").onSnapshot(doc => {
       if (doc.exists) setAttendance(doc.data().data);
-      else db.collection("edutrack").doc("attendance").set({ data: INIT_ATTENDANCE });
+      else db.collection("edutrack").doc("attendance_v2").set({ data: INIT_ATTENDANCE });
       setDbLoaded(true);
       setSyncing(false);
     });
@@ -1221,7 +1222,7 @@ export default function App() {
     setStudents(s); 
     if (db) {
        setSyncing(true);
-       await db.collection("edutrack").doc("students").set({ data: s }); 
+       await db.collection("edutrack").doc("students_v2").set({ data: s }); 
        setSyncing(false);
     }
   };
@@ -1230,7 +1231,7 @@ export default function App() {
     setAttendance(a); 
     if (db) {
        setSyncing(true);
-       await db.collection("edutrack").doc("attendance").set({ data: a }); 
+       await db.collection("edutrack").doc("attendance_v2").set({ data: a }); 
        setSyncing(false);
     }
   };
