@@ -1176,6 +1176,17 @@ if (typeof window !== "undefined" && window.firebase) {
   db = window.firebase.firestore();
 }
 
+function LoadingOverlay() {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(13,17,23,0.7)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999, backdropFilter: "blur(2px)" }}>
+      <div style={{ background: "#21262d", borderRadius: 10, padding: "18px 20px", border: "1px solid #30363d", display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ width: 22, height: 22, border: "3px solid #30363d", borderTopColor: "#58a6ff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+        <span style={{ fontWeight: 600 }}>Loading Firebase...</span>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [user,    setUser]    = useState(null);
   const [page,    setPage]    = useState("dashboard");
