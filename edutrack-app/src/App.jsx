@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts';
-import { db, firebaseConfig } from './firebase.js';
+
 
 // â”€â”€â”€ CONSTANTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -1164,7 +1164,42 @@ function LoadingOverlay() {
     <div style={{ position: "fixed", inset: 0, background: "rgba(13,17,23,0.7)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999, backdropFilter: "blur(2px)" }}>
       <div style={{ background: "#21262d", borderRadius: 10, padding: "18px 20px", border: "1px solid #30363d", display: "flex", alignItems: "center", gap: 16 }}>
         <div style={{ width: 22, height: 22, border: "3px solid #30363d", borderTopColor: "#58a6ff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-        <span style={{ fontWeight: 600 }}>Loading Firebase...</span>
+        <span style={{ fontWeight: 600 }}>Loading Application...</span>
+      </div>
+    </div>
+  );
+}
+
+function LoginScreen({ onLogin }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (email && password) {
+      onLogin({ email });
+    }
+  };
+
+  return (
+    <div className="fade-in" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: C.bg, color: C.text, padding: 20 }}>
+      <div style={{ ...S.card, width: "100%", maxWidth: 360, padding: "32px 28px" }}>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ fontSize: 44, marginBottom: 12 }}>🏫</div>
+          <h2 style={{ fontSize: 24, margin: "0 0 8px 0", color: C.accent }}>EduTrack Pro</h2>
+          <div style={{ fontSize: 13, color: C.muted }}>Sign in to continue to your dashboard</div>
+        </div>
+        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <div>
+            <Label>Email Address</Label>
+            <input type="email" required placeholder="admin@school.edu" style={{ ...S.input, width: "100%", boxSizing: "border-box", padding: "10px 14px" }} value={email} onChange={e => setEmail(e.target.value)} />
+          </div>
+          <div>
+            <Label>Password</Label>
+            <input type="password" required placeholder="••••••••" style={{ ...S.input, width: "100%", boxSizing: "border-box", padding: "10px 14px" }} value={password} onChange={e => setPassword(e.target.value)} />
+          </div>
+          <button type="submit" style={{ ...S.btn, background: C.accent, color: "#fff", marginTop: 10, padding: "12px", fontSize: 14, fontWeight: 700 }}>Authenticate Securely</button>
+        </form>
       </div>
     </div>
   );
@@ -1179,65 +1214,95 @@ export default function App() {
   const [attendance, setAttendance] = useState(INIT_ATTENDANCE);
   const [dbLoaded, setDbLoaded]     = useState(false);
   const [dbError, setDbError]       = useState("");
+  const [dbInstance, setDbInstance] = useState(null);
 
   useEffect(() => {
-    // Check if firebaseConfig is loaded properly
-    if (!firebaseConfig || !firebaseConfig.apiKey) {
-      console.error("Firebase config is missing or invalid");
-      setDbError("Firebase configuration is missing or invalid.");
-      setDbLoaded(true);
-      return;
-    }
-
-    if (!db) { setDbLoaded(true); return; } // Fallback if no firebase script
-    setSyncing(true);
+    let isActive = true;
     let unsubS = () => {}, unsubA = () => {};
     
-    // Fallback timeout to prevent infinite Loading Firebase screen
+    // Fallback timeout to prevent infinite Loading screen
     const timeoutId = setTimeout(() => {
-      setDbLoaded(true);
-      setSyncing(false);
+      if (isActive) {
+        setDbLoaded(true);
+        setSyncing(false);
+      }
     }, 6000);
 
-    // Subscribe to real-time updates from Firestore
-    unsubS = db.collection("edutrack").doc("students_v2").onSnapshot(doc => {
-      if (doc.exists && doc.data().data) {
-        setStudents(doc.data().data);
-      } else {
-        setStudents(INIT_STUDENTS);
-        db.collection("edutrack").doc("students_v2").set({ data: INIT_STUDENTS }).catch(err => console.error("Error setting initial students:", err));
+    // Dynamic import to prevent synchronous script blocking on slow network
+    import('./firebase.js').then(({ db: firebaseDb, firebaseConfig }) => {
+      if (!isActive) return;
+
+      // Check if firebaseConfig is loaded properly
+      if (!firebaseConfig || !firebaseConfig.apiKey) {
+        console.error("Firebase config is missing or invalid");
+        setDbError("Firebase configuration is missing or invalid.");
+        setDbLoaded(true);
+        clearTimeout(timeoutId);
+        return;
       }
-    }, err => { setDbError(err.message); setDbLoaded(true); });
-    
-    unsubA = db.collection("edutrack").doc("attendance_v2").onSnapshot(doc => {
-      if (doc.exists && doc.data().data) {
-        setAttendance(doc.data().data);
-      } else {
-        setAttendance(INIT_ATTENDANCE);
-        db.collection("edutrack").doc("attendance_v2").set({ data: INIT_ATTENDANCE }).catch(err => console.error("Error setting initial attendance:", err));
+
+      if (!firebaseDb) { 
+        setDbLoaded(true); 
+        clearTimeout(timeoutId);
+        return; 
       }
-      setDbLoaded(true);
-      setSyncing(false);
-      clearTimeout(timeoutId);
-    }, err => { setDbError(err.message); setDbLoaded(true); clearTimeout(timeoutId); });
+      
+      setDbInstance(firebaseDb);
+      setSyncing(true);
+
+      // Subscribe to real-time updates from Firestore
+      unsubS = firebaseDb.collection("edutrack").doc("students_v2").onSnapshot(doc => {
+        if (doc.exists && doc.data().data) {
+          setStudents(doc.data().data);
+        } else {
+          setStudents(INIT_STUDENTS);
+          firebaseDb.collection("edutrack").doc("students_v2").set({ data: INIT_STUDENTS }).catch(err => console.error("Error setting initial students:", err));
+        }
+      }, err => { setDbError(err.message); setDbLoaded(true); });
+      
+      unsubA = firebaseDb.collection("edutrack").doc("attendance_v2").onSnapshot(doc => {
+        if (doc.exists && doc.data().data) {
+          setAttendance(doc.data().data);
+        } else {
+          setAttendance(INIT_ATTENDANCE);
+          firebaseDb.collection("edutrack").doc("attendance_v2").set({ data: INIT_ATTENDANCE }).catch(err => console.error("Error setting initial attendance:", err));
+        }
+        setDbLoaded(true);
+        setSyncing(false);
+        clearTimeout(timeoutId);
+      }, err => { setDbError(err.message); setDbLoaded(true); clearTimeout(timeoutId); });
+      
+    }).catch(err => {
+      console.error("Failed to load Firebase chunks dynamically:", err);
+      if (isActive) {
+        setDbError("Network issue: Failed to load application modules.");
+        setDbLoaded(true);
+        clearTimeout(timeoutId);
+      }
+    });
     
-    return () => { clearTimeout(timeoutId); unsubS(); unsubA(); };
+    return () => { 
+      isActive = false;
+      clearTimeout(timeoutId); 
+      unsubS(); 
+      unsubA(); 
+    };
   }, []);
 
   const saveStudents = async s => { 
     setStudents(s); 
-    if (db) {
+    if (dbInstance) {
        setSyncing(true);
-       await db.collection("edutrack").doc("students_v2").set({ data: s }); 
+       await dbInstance.collection("edutrack").doc("students_v2").set({ data: s }); 
        setSyncing(false);
     }
   };
   
   const saveAttendance = async a => { 
     setAttendance(a); 
-    if (db) {
+    if (dbInstance) {
        setSyncing(true);
-       await db.collection("edutrack").doc("attendance_v2").set({ data: a }); 
+       await dbInstance.collection("edutrack").doc("attendance_v2").set({ data: a }); 
        setSyncing(false);
     }
   };
