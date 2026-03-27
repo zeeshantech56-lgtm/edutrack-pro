@@ -1172,6 +1172,8 @@ function LoadingOverlay() {
   );
 }
 
+// --- LOGIN SCREEN ---
+// Ensures Vercel picks up this component on the latest build request
 function LoginScreen({ onLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
