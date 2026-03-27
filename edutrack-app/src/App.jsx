@@ -87,7 +87,7 @@ const INIT_STUDENTS = (() => {
 const INIT_ATTENDANCE = (() => {
   const att = {};
   const today = new Date();
-  
+
   // Only upload today's data to prevent exceeding Firestore's index entry limits
   for (let back = 0; back >= 0; back--) {
     const d = new Date(today);
@@ -317,7 +317,7 @@ function Dashboard({ students, attendance }) {
         <StatCard title="Today's Rate" value={`${todayStats.pct}%`} sub="Overall attendance" color={C.warn} icon="ðŸ“Š" />
       </div>
 
-      <div className="grid-2" style={{ marginTop: 16  }}>
+      <div className="grid-2" style={{ marginTop: 16 }}>
         {/* Weekly area chart */}
         <div style={S.card}>
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>This Week â€” Attendance %</div>
@@ -1101,7 +1101,7 @@ function StudentProfile({ students, attendance }) {
             </div>
           </div>
 
-          <div className="grid-4" style={{ marginBottom: 16  }}>
+          <div className="grid-4" style={{ marginBottom: 16 }}>
             <StatCard title="Total School Days" value={stats.total} color={C.accent} icon="ðŸ«" />
             <StatCard title="Days Present" value={stats.present} color={C.ok} icon="âœ…" />
             <StatCard title="Days Absent" value={stats.absent} color={C.err} icon="âŒ" />
@@ -1114,7 +1114,7 @@ function StudentProfile({ students, attendance }) {
             </div>
           </div>
 
-          <div className="grid-2" style={{ alignItems: "start"  }}>
+          <div className="grid-2" style={{ alignItems: "start" }}>
             <div style={S.card}>
               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Monthly Performance</div>
               {stats.monthData.length > 0 ? (
@@ -1172,58 +1172,23 @@ function LoadingOverlay() {
   );
 }
 
-// --- LOGIN SCREEN ---
-// Ensures Vercel picks up this component on the latest build request
-function LoginScreen({ onLogin }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (email && password) {
-      onLogin({ email });
-    }
-  };
 
-  return (
-    <div className="fade-in" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: C.bg, color: C.text, padding: 20 }}>
-      <div style={{ ...S.card, width: "100%", maxWidth: 360, padding: "32px 28px" }}>
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div style={{ fontSize: 44, marginBottom: 12 }}>🏫</div>
-          <h2 style={{ fontSize: 24, margin: "0 0 8px 0", color: C.accent }}>EduTrack Pro</h2>
-          <div style={{ fontSize: 13, color: C.muted }}>Sign in to continue to your dashboard</div>
-        </div>
-        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div>
-            <Label>Email Address</Label>
-            <input type="email" required placeholder="admin@school.edu" style={{ ...S.input, width: "100%", boxSizing: "border-box", padding: "10px 14px" }} value={email} onChange={e => setEmail(e.target.value)} />
-          </div>
-          <div>
-            <Label>Password</Label>
-            <input type="password" required placeholder="••••••••" style={{ ...S.input, width: "100%", boxSizing: "border-box", padding: "10px 14px" }} value={password} onChange={e => setPassword(e.target.value)} />
-          </div>
-          <button type="submit" style={{ ...S.btn, background: C.accent, color: "#fff", marginTop: 10, padding: "12px", fontSize: 14, fontWeight: 700 }}>Authenticate Securely</button>
-        </form>
-      </div>
-    </div>
-  );
-}
 
 export default function App() {
-  const [user,    setUser]    = useState(null);
-  const [page,    setPage]    = useState("dashboard");
+  const [user, setUser] = useState(null);
+  const [page, setPage] = useState("dashboard");
   const [syncing, setSyncing] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
-  const [students, setStudents]     = useState(INIT_STUDENTS);
+  const [students, setStudents] = useState(INIT_STUDENTS);
   const [attendance, setAttendance] = useState(INIT_ATTENDANCE);
-  const [dbLoaded, setDbLoaded]     = useState(false);
-  const [dbError, setDbError]       = useState("");
+  const [dbLoaded, setDbLoaded] = useState(false);
+  const [dbError, setDbError] = useState("");
   const [dbInstance, setDbInstance] = useState(null);
 
   useEffect(() => {
     let isActive = true;
-    let unsubS = () => {}, unsubA = () => {};
-    
+    let unsubS = () => { }, unsubA = () => { };
+
     // Fallback timeout to prevent infinite Loading screen
     const timeoutId = setTimeout(() => {
       if (isActive) {
@@ -1245,12 +1210,12 @@ export default function App() {
         return;
       }
 
-      if (!firebaseDb) { 
-        setDbLoaded(true); 
+      if (!firebaseDb) {
+        setDbLoaded(true);
         clearTimeout(timeoutId);
-        return; 
+        return;
       }
-      
+
       setDbInstance(firebaseDb);
       setSyncing(true);
 
@@ -1263,7 +1228,7 @@ export default function App() {
           firebaseDb.collection("edutrack").doc("students_v2").set({ data: INIT_STUDENTS }).catch(err => console.error("Error setting initial students:", err));
         }
       }, err => { setDbError(err.message); setDbLoaded(true); });
-      
+
       unsubA = firebaseDb.collection("edutrack").doc("attendance_v2").onSnapshot(doc => {
         if (doc.exists && doc.data().data) {
           setAttendance(doc.data().data);
@@ -1275,7 +1240,7 @@ export default function App() {
         setSyncing(false);
         clearTimeout(timeoutId);
       }, err => { setDbError(err.message); setDbLoaded(true); clearTimeout(timeoutId); });
-      
+
     }).catch(err => {
       console.error("Failed to load Firebase chunks dynamically:", err);
       if (isActive) {
@@ -1284,30 +1249,30 @@ export default function App() {
         clearTimeout(timeoutId);
       }
     });
-    
-    return () => { 
+
+    return () => {
       isActive = false;
-      clearTimeout(timeoutId); 
-      unsubS(); 
-      unsubA(); 
+      clearTimeout(timeoutId);
+      unsubS();
+      unsubA();
     };
   }, []);
 
-  const saveStudents = async s => { 
-    setStudents(s); 
+  const saveStudents = async s => {
+    setStudents(s);
     if (dbInstance) {
-       setSyncing(true);
-       await dbInstance.collection("edutrack").doc("students_v2").set({ data: s }); 
-       setSyncing(false);
+      setSyncing(true);
+      await dbInstance.collection("edutrack").doc("students_v2").set({ data: s });
+      setSyncing(false);
     }
   };
-  
-  const saveAttendance = async a => { 
-    setAttendance(a); 
+
+  const saveAttendance = async a => {
+    setAttendance(a);
     if (dbInstance) {
-       setSyncing(true);
-       await dbInstance.collection("edutrack").doc("attendance_v2").set({ data: a }); 
-       setSyncing(false);
+      setSyncing(true);
+      await dbInstance.collection("edutrack").doc("attendance_v2").set({ data: a });
+      setSyncing(false);
     }
   };
 
@@ -1318,18 +1283,18 @@ export default function App() {
   if (dbError) return (
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: C.bg, color: C.text, padding: 20 }}>
       <div style={{ background: "#21262d", padding: "30px", borderRadius: 12, border: "2px solid #f85149", maxWidth: 600 }}>
-         <h2 style={{ color: "#f85149", margin: "0 0 8px 0" }}>Firebase Connection Blocked</h2>
-         <p style={{ margin: "0 0 16px 0", lineHeight: 1.5 }}>Your application is working perfectly, but a security setting in your <strong>Firebase Database</strong> is blocking the app from reading your data!</p>
-         <p style={{ color: "#8b949e", fontSize: 13, background: "#0d1117", padding: 10, borderRadius: 6, margin: "0 0 20px 0" }}><i>Error: {dbError}</i></p>
-         <p style={{ margin: "0 0 10px 0", fontWeight: 600 }}>To fix this instantly, login to your Firebase Console &rarr; Firestore Database &rarr; Rules, and paste EXACTLY this into the editor:</p>
-         <pre style={{ background: "#0d1117", padding: "16px", borderRadius: 6, color: "#58a6ff", fontSize: 14, border: "1px solid #30363d", overflowX: "auto", margin: "0 0 20px 0" }}>{`service cloud.firestore {
+        <h2 style={{ color: "#f85149", margin: "0 0 8px 0" }}>Firebase Connection Blocked</h2>
+        <p style={{ margin: "0 0 16px 0", lineHeight: 1.5 }}>Your application is working perfectly, but a security setting in your <strong>Firebase Database</strong> is blocking the app from reading your data!</p>
+        <p style={{ color: "#8b949e", fontSize: 13, background: "#0d1117", padding: 10, borderRadius: 6, margin: "0 0 20px 0" }}><i>Error: {dbError}</i></p>
+        <p style={{ margin: "0 0 10px 0", fontWeight: 600 }}>To fix this instantly, login to your Firebase Console &rarr; Firestore Database &rarr; Rules, and paste EXACTLY this into the editor:</p>
+        <pre style={{ background: "#0d1117", padding: "16px", borderRadius: 6, color: "#58a6ff", fontSize: 14, border: "1px solid #30363d", overflowX: "auto", margin: "0 0 20px 0" }}>{`service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
       allow read, write: if true;
     }
   }
 }`}</pre>
-         <button onClick={() => window.location.reload()} style={{ background: "#58a6ff", color: "#fff", border: "none", padding: "12px", borderRadius: 6, cursor: "pointer", fontWeight: "bold", width: "100%", fontSize: 14 }}>I've published the new rules, Try Again!</button>
+        <button onClick={() => window.location.reload()} style={{ background: "#58a6ff", color: "#fff", border: "none", padding: "12px", borderRadius: 6, cursor: "pointer", fontWeight: "bold", width: "100%", fontSize: 14 }}>I've published the new rules, Try Again!</button>
       </div>
     </div>
   );
@@ -1352,10 +1317,10 @@ export default function App() {
 
       {/* Mobile Top Header */}
       <div className="mobile-header">
-         <div style={{ fontSize: 18, fontWeight: 800, color: C.accent, display: "flex", alignItems: "center", gap: 8 }}>
-           <span style={{ fontSize: 20 }}>🏫</span> EduTrack Pro
-         </div>
-         <button onClick={() => setNavOpen(true)} style={{ background: "transparent", border: "none", color: C.text, fontSize: 24, cursor: "pointer", padding: 0 }}>☰</button>
+        <div style={{ fontSize: 18, fontWeight: 800, color: C.accent, display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 20 }}>🏫</span> EduTrack Pro
+        </div>
+        <button onClick={() => setNavOpen(true)} style={{ background: "transparent", border: "none", color: C.text, fontSize: 24, cursor: "pointer", padding: 0 }}>☰</button>
       </div>
 
       {/* Mobile Overlay */}
@@ -1394,4 +1359,24 @@ export default function App() {
     </div>
   );
 }
+export function LoginScreen({ onLogin }) {
+  const [user, setUser] = (window.React || {}).useState ? window.React.useState("") : ["", () => { }];
+  const [pass, setPass] = (window.React || {}).useState ? window.React.useState("") : ["", () => { }];
 
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (user === "admin" && pass === "admin") onLogin({ username: "Admin", role: "admin" });
+    else alert("Invalid Credentials");
+  };
+
+  return (
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: "#0d1117", color: "white", fontFamily: "sans-serif" }}>
+      <form onSubmit={handleLogin} style={{ background: "#161b22", padding: 40, borderRadius: 12, border: "1px solid #30363d", width: 320 }}>
+        <h2 style={{ textAlign: "center", marginBottom: 20 }}>EduTrack Pro</h2>
+        <input style={{ width: "100%", padding: 12, marginBottom: 15, background: "#0d1117", color: "white", border: "1px solid #30363d", borderRadius: 6 }} placeholder="Username" value={user} onChange={e => setUser(e.target.value)} />
+        <input type="password" style={{ width: "100%", padding: 12, marginBottom: 20, background: "#0d1117", color: "white", border: "1px solid #30363d", borderRadius: 6 }} placeholder="Password" value={pass} onChange={e => setPass(e.target.value)} />
+        <button type="submit" style={{ width: "100%", padding: 12, background: "#58a6ff", color: "white", border: "none", borderRadius: 6, fontWeight: "bold", cursor: "pointer" }}>Sign In</button>
+      </form>
+    </div>
+  );
+}
