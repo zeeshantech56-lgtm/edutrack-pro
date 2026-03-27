@@ -87,7 +87,9 @@ const INIT_STUDENTS = (() => {
 const INIT_ATTENDANCE = (() => {
   const att = {};
   const today = new Date();
-  for (let back = 14; back >= 0; back--) {
+  
+  // Only upload today's data to prevent exceeding Firestore's index entry limits
+  for (let back = 0; back >= 0; back--) {
     const d = new Date(today);
     d.setDate(today.getDate() - back);
     const ds = fmtDate(d);
