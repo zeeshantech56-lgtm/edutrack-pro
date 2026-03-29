@@ -1,8 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  AreaChart, Area, PieChart, Pie, Cell, Legend, LineChart, Line
-} from "recharts";
+
+
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
@@ -308,7 +305,7 @@ function Dashboard({ students, attendance }) {
 
   return (
     <div>
-      <PageHeader title="Dashboard" sub={`Overview for ${today} &mdash; ${totalStudents} students enrolled across all classes`} />
+      <PageHeader title="Dashboard" sub={`Overview for ${today} — ${totalStudents} students enrolled across all classes`} />
 
       <div className="grid-4">
         <StatCard title="Total Students" value={totalStudents} sub="All classes enrolled" color={C.accent} icon="&#127891;" />
@@ -320,7 +317,7 @@ function Dashboard({ students, attendance }) {
       <div className="grid-2" style={{ marginTop: 16  }}>
         {/* Weekly area chart */}
         <div style={S.card}>
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>This Week &mdash; Attendance %</div>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>This Week — Attendance %</div>
           <ResponsiveContainer width="100%" height={190}>
             <AreaChart data={weekData}>
               <defs>
@@ -373,7 +370,7 @@ function Dashboard({ students, attendance }) {
 
       {/* Class-wise bar */}
       <div style={{ ...S.card, marginTop: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Today by Class &mdash; Present vs Absent</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Today by Class — Present vs Absent</div>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={classData} margin={{ top: 0, right: 10, left: -10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
@@ -474,7 +471,7 @@ function MarkAttendance({ students, attendance, onSave }) {
           </div>
           <div style={{ flex: 1, minWidth: 160 }}>
             <Label>Search Student</Label>
-            <input style={{ ...S.input, width: "100%", boxSizing: "border-box" }} placeholder="Name or roll no&hellip;" value={search} onChange={e => setSearch(e.target.value)} />
+            <input style={{ ...S.input, width: "100%", boxSizing: "border-box" }} placeholder="Name or roll no…" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
             <button style={{ ...S.btn, background: C.border, color: C.text }} onClick={markAll}>All Present</button>
@@ -497,7 +494,7 @@ function MarkAttendance({ students, attendance, onSave }) {
       {/* Student grid */}
       <div style={S.card}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>
-          {CLASSES.find(c => c.id === cls)?.label} &mdash; Section {sec}
+          {CLASSES.find(c => c.id === cls)?.label} — Section {sec}
           <span style={{ color: C.muted, fontWeight: 400, marginLeft: 6 }}>({visible.length} students)</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 8 }}>
@@ -574,14 +571,14 @@ function StudentsPage({ students, onSave }) {
             </select>
           </div>
           <div style={{ flex: 1, minWidth: 180 }}><Label>Search</Label>
-            <input style={{ ...S.input, width: "100%", boxSizing: "border-box" }} placeholder="Name or roll no&hellip;" value={search} onChange={e => setSearch(e.target.value)} />
+            <input style={{ ...S.input, width: "100%", boxSizing: "border-box" }} placeholder="Name or roll no…" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
         <Divider />
         <div style={{ display: "flex", gap: 10 }}>
           <input
             style={{ ...S.input, flex: 1 }}
-            placeholder="Enter full name to add new student&hellip;"
+            placeholder="Enter full name to add new student…"
             value={newName}
             onChange={e => setNewName(e.target.value)}
             onKeyDown={e => e.key === "Enter" && addStudent()}
@@ -592,7 +589,7 @@ function StudentsPage({ students, onSave }) {
 
       <div style={S.card}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>
-          {CLASSES.find(c => c.id === cls)?.label} &mdash; Section {sec}
+          {CLASSES.find(c => c.id === cls)?.label} — Section {sec}
           <span style={{ color: C.muted, fontWeight: 400, marginLeft: 6 }}>({visible.length} of {current.length})</span>
         </div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -737,7 +734,7 @@ function ReportsPage({ students, attendance }) {
       {/* Chart */}
       <div style={{ ...S.card, marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>
-          {view === "weekly" ? "This Week" : view === "monthly" ? `${MONTHS[month]} ${year}` : `Year ${year}`} &mdash; Attendance %
+          {view === "weekly" ? "This Week" : view === "monthly" ? `${MONTHS[month]} ${year}` : `Year ${year}`} — Attendance %
         </div>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={displayData}>
@@ -752,7 +749,7 @@ function ReportsPage({ students, attendance }) {
 
       {/* Stacked present/absent */}
       <div style={{ ...S.card, marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Present vs Absent &mdash; Headcount</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Present vs Absent — Headcount</div>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={displayData}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
@@ -857,7 +854,7 @@ function YearlyView({ students, attendance }) {
 
       {/* Horizontal bar: class attendance % */}
       <div style={{ ...S.card, marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Annual Attendance Rate by Class &mdash; {year}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Annual Attendance Rate by Class — {year}</div>
         <ResponsiveContainer width="100%" height={340}>
           <BarChart data={classAnnual} layout="vertical" margin={{ left: 60 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.border} horizontal={false} />
@@ -875,7 +872,7 @@ function YearlyView({ students, attendance }) {
 
       {/* Multi-line comparison */}
       <div style={{ ...S.card, marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Month-wise Comparison (Key Classes) &mdash; {year}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Month-wise Comparison (Key Classes) — {year}</div>
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={monthlyForClasses}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
@@ -892,7 +889,7 @@ function YearlyView({ students, attendance }) {
 
       {/* Summary table */}
       <div style={S.card}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>All Classes Summary &mdash; {year}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>All Classes Summary — {year}</div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
@@ -1092,7 +1089,7 @@ function StudentProfile({ students, attendance }) {
             <div style={{ flex: 1 }}>
               <h2 style={{ margin: "0 0 4px", fontSize: 20, color: C.text }}>{selStudent.name}</h2>
               <div style={{ color: C.muted, fontSize: 13 }}>
-                Roll No: <strong style={{ color: C.text }}>{selStudent.rollNo}</strong> â€¢ {CLASSES.find(c => c.id === cls)?.label} &mdash; Section {sec}
+                Roll No: <strong style={{ color: C.text }}>{selStudent.rollNo}</strong> â€¢ {CLASSES.find(c => c.id === cls)?.label} — Section {sec}
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
@@ -1188,7 +1185,7 @@ function LoadingOverlay() {
   );
 }
 
-export function LoginScreen({ onLogin }) {
+function LoginScreen({ onLogin }) {
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
 
@@ -1210,7 +1207,7 @@ export function LoginScreen({ onLogin }) {
   );
 }
 
-export default function App() {
+function App() {
   const [user,    setUser]    = useState(null);
   const [page,    setPage]    = useState("dashboard");
   const [syncing, setSyncing] = useState(false);
@@ -1269,7 +1266,7 @@ export default function App() {
          <h2 style={{ color: "#f85149", margin: "0 0 8px 0" }}>Firebase Connection Blocked</h2>
          <p style={{ margin: "0 0 16px 0", lineHeight: 1.5 }}>Your application is working perfectly, but a security setting in your <strong>Firebase Database</strong> is blocking the app from reading your data!</p>
          <p style={{ color: "#8b949e", fontSize: 13, background: "#0d1117", padding: 10, borderRadius: 6, margin: "0 0 20px 0" }}><i>Error: {dbError}</i></p>
-         <p style={{ margin: "0 0 10px 0", fontWeight: 600 }}>To fix this instantly, login to your Firebase Console &rarr; Firestore Database &rarr; Rules, and paste EXACTLY this into the editor:</p>
+         <p style={{ margin: "0 0 10px 0", fontWeight: 600 }}>To fix this instantly, login to your Firebase Console → Firestore Database → Rules, and paste EXACTLY this into the editor:</p>
          <pre style={{ background: "#0d1117", padding: "16px", borderRadius: 6, color: "#58a6ff", fontSize: 14, border: "1px solid #30363d", overflowX: "auto", margin: "0 0 20px 0" }}>{`service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
