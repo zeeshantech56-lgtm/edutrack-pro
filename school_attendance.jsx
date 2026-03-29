@@ -1188,6 +1188,28 @@ function LoadingOverlay() {
   );
 }
 
+export function LoginScreen({ onLogin }) {
+  const [user, setUser] = useState("");
+  const [pass, setPass] = useState("");
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (user === "admin" && pass === "admin") onLogin({ username: "Admin", role: "admin" });
+    else alert("Invalid Credentials");
+  };
+
+  return (
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: "#0d1117", color: "white", fontFamily: "sans-serif" }}>
+      <form onSubmit={handleLogin} style={{ background: "#161b22", padding: 40, borderRadius: 12, border: "1px solid #30363d", width: 320 }}>
+        <h2 style={{ textAlign: "center", marginBottom: 20 }}>EduTrack Pro</h2>
+        <input style={{ width: "100%", padding: 12, marginBottom: 15, background: "#0d1117", color: "white", border: "1px solid #30363d", borderRadius: 6 }} placeholder="Username" value={user} onChange={e => setUser(e.target.value)} />
+        <input type="password" style={{ width: "100%", padding: 12, marginBottom: 20, background: "#0d1117", color: "white", border: "1px solid #30363d", borderRadius: 6 }} placeholder="Password" value={pass} onChange={e => setPass(e.target.value)} />
+        <button type="submit" style={{ width: "100%", padding: 12, background: "#58a6ff", color: "white", border: "none", borderRadius: 6, fontWeight: "bold", cursor: "pointer" }}>Sign In</button>
+      </form>
+    </div>
+  );
+}
+
 export default function App() {
   const [user,    setUser]    = useState(null);
   const [page,    setPage]    = useState("dashboard");
