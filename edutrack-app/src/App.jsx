@@ -1360,8 +1360,8 @@ export default function App() {
   );
 }
 export function LoginScreen({ onLogin }) {
-  const [user, setUser] = (window.React || {}).useState ? window.React.useState("") : ["", () => { }];
-  const [pass, setPass] = (window.React || {}).useState ? window.React.useState("") : ["", () => { }];
+  const [user, setUser] = useState("");
+  const [pass, setPass] = useState("");
 
   const handleLogin = (e) => {
     e.preventDefault();
