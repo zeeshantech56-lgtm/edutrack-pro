@@ -1,0 +1,1353 @@
+1: <!DOCTYPE html>
+2: <html>
+3: <head>
+4:   <meta charset="utf-8">
+5:   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+6:   <title>EduTrack Pro</title>
+7:   
+8:   <script src="https://unpkg.com/react@18.2.0/umd/react.development.js" crossorigin></script>
+9:   <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js" crossorigin></script>
+10:   <script src="https://unpkg.com/prop-types@15.8.1/prop-types.js"></script>
+11:   <script src="https://unpkg.com/recharts@2.12.3/umd/Recharts.js" crossorigin></script>
+12:   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+13: 
+14:   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+15:   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+16:   
+17:   <style>
+18:     body { margin: 0; padding: 0; background: #0d1117; color: #e6edf3; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; overflow-x: hidden; }
+19:   </style>
+20: </head>
+21: <body>
+22:   <div id="root"></div>
+23:   <script type="text/babel">
+24:     const { useState, useEffect, useMemo, useCallback } = window.React;
+25:     const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, Legend, LineChart, Line } = window.Recharts;
+26:     
+27: 
+28: 
+29: 
+30: // â”€â”€â”€ CONSTANTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+31: 
+32: const CLASSES = [
+33:   { id: "nursery", label: "Nursery" },
+34:   { id: "kg", label: "KG" },
+35:   ...Array.from({ length: 12 }, (_, i) => ({ id: `${i + 1}`, label: `Class ${i + 1}` })),
+36: ];
+37: const SECTIONS = ["A", "B"];
+38: const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+39: const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+40: 
+41: const FNAME = [
+42:   "Aarav", "Aditi", "Aditya", "Akash", "Amit", "Ananya", "Anjali", "Arjun", "Aryan", "Avni",
+43:   "Deepak", "Disha", "Gaurav", "Ishaan", "Kavya", "Kiara", "Kunal", "Manav", "Meera", "Mihir",
+44:   "Neha", "Nikhil", "Nisha", "Pooja", "Prachi", "Pratik", "Priya", "Rahul", "Rajat", "Riya",
+45:   "Rohit", "Sakshi", "Sanjay", "Sara", "Shiv", "Shivani", "Shreya", "Tarun", "Tanvi", "Uday",
+46:   "Uma", "Varun", "Vidya", "Vikram", "Vivek", "Yash", "Zara", "Siddharth", "Ayesha", "Kabir",
+47: ];
+48: const LNAME = [
+49:   "Sharma", "Verma", "Gupta", "Singh", "Patel", "Tiwari", "Joshi", "Dubey", "Mishra", "Yadav",
+50:   "Agarwal", "Srivastava", "Pandey", "Kumar", "Chauhan", "Rathore", "Malhotra", "Kapoor", "Khan", "Ansari",
+51: ];
+52: 
+53: // â”€â”€â”€ SEEDED RNG & UTILITIES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+54: 
+55: function mkRand(seed) {
+56:   let s = seed;
+57:   return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+58: }
+59: 
+60: function fmtDate(d) {
+61:   const y = d.getFullYear();
+62:   const m = String(d.getMonth() + 1).padStart(2, "0");
+63:   const dd = String(d.getDate()).padStart(2, "0");
+64:   return `${y}-${m}-${dd}`;
+65: }
+66: 
+67: function isWeekend(dateStr) {
+68:   const d = new Date(dateStr + "T00:00:00");
+69:   return d.getDay() === 0 || d.getDay() === 6;
+70: }
+71: 
+72: function getWeekDates(dateStr) {
+73:   const d = new Date(dateStr + "T00:00:00");
+74:   const dow = d.getDay();
+75:   const mon = new Date(d);
+76:   mon.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+77:   return Array.from({ length: 5 }, (_, i) => {
+78:     const dd = new Date(mon);
+79:     dd.setDate(mon.getDate() + i);
+80:     return fmtDate(dd);
+81:   });
+82: }
+83: 
+84: // â”€â”€â”€ SAMPLE DATA GENERATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+85: 
+86: const INIT_STUDENTS = (() => {
+87:   const out = {};
+88:   let uid = 1;
+89:   CLASSES.forEach((cls, ci) => {
+90:     SECTIONS.forEach((sec, si) => {
+91:       const key = `${cls.id}_${sec}`;
+92:       const r = mkRand(ci * 200 + si * 30 + 7);
+93:       const n = 22 + Math.floor(r() * 8);
+94:       const seen = new Set();
+95:       const arr = [];
+96:       for (let i = 0; i < n; i++) {
+97:         let name;
+98:         let tries = 0;
+99:         do {
+100:           name = `${FNAME[Math.floor(r() * FNAME.length)]} ${LNAME[Math.floor(r() * LNAME.length)]}`;
+101:           tries++;
+102:         } while (seen.has(name) && tries < 20);
+103:         seen.add(name);
+104:         arr.push({ id: `s${uid++}`, name, rollNo: i + 1 });
+105:       }
+106:       out[key] = arr;
+107:     });
+108:   });
+109:   return out;
+110: })();
+111: 
+112: const INIT_ATTENDANCE = (() => {
+113:   const att = {};
+114:   const today = new Date();
+115:   for (let back = 14; back >= 0; back--) {
+116:     const d = new Date(today);
+117:     d.setDate(today.getDate() - back);
+118:     const ds = fmtDate(d);
+119:     if (isWeekend(ds)) continue;
+120:     CLASSES.forEach(cls => {
+121:       SECTIONS.forEach(sec => {
+122:         const key = `${ds}_${cls.id}_${sec}`;
+123:         const studs = INIT_STUDENTS[`${cls.id}_${sec}`] || [];
+124:         const r = mkRand(back * 100 + cls.id.charCodeAt(0) + (sec === "A" ? 1 : 2));
+125:         att[key] = {
+126:           date: ds, classId: cls.id, section: sec,
+127:           present: studs.filter(() => r() > 0.12).map(s => s.id)
+128:         };
+129:       });
+130:     });
+131:   }
+132:   return att;
+133: })();
+134: 
+135: // ─── GLOBAL STYLES ────────────────────────────────────────────────────────────
+136: 
+137: const GlobalStyles = () => (
+138:   <style>{`
+139:     @keyframes fadeIn  { from { opacity: 0 }               to { opacity: 1 } }
+140:     @keyframes slideUp { from { opacity: 0; transform: translateY(15px) } to { opacity: 1; transform: translateY(0) } }
+141:     @keyframes spin    { to   { transform: rotate(360deg) } }
+142:     .fade-in         { animation: fadeIn  0.4s ease-out  forwards }
+143:     .slide-up        { animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards }
+144:     .page-transition { animation: fadeIn  0.3s ease-out  forwards }
+145:     * { box-sizing: border-box }
+146:     ::-webkit-scrollbar       { width: 6px; height: 6px }
+147:     ::-webkit-scrollbar-track { background: transparent }
+148:     ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px }
+149:     ::-webkit-scrollbar-thumb:hover { background: #58a6ff55 }
+150: 
+151:     /* Mobile Responsiveness */
+152:     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+153:     .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+154:     .app-sidebar { width: 228px; background: #161b22; border-right: 1px solid #30363d; position: fixed; top: 0; left: 0; height: 100vh; display: flex; flex-direction: column; z-index: 30; transition: transform 0.3s ease; }
+155:     .app-main { margin-left: 228px; flex: 1; padding: 24px 28px; min-height: 100vh; overflow-x: hidden; }
+156:     .mobile-header { display: none; padding: 14px 20px; background: #161b22; border-bottom: 1px solid #30363d; position: sticky; top: 0; z-index: 25; align-items: center; justify-content: space-between; }
+157:     .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 28; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; }
+158:     
+159:     @media (max-width: 768px) {
+160:       .grid-2, .grid-4 { grid-template-columns: 1fr; gap: 16px; }
+161:       .app-sidebar { transform: translateX(-100%); }
+162:       .app-sidebar.open { transform: translateX(0); }
+163:       .app-main { margin-left: 0; padding: 16px; padding-top: 20px; }
+164:       .mobile-header { display: flex; }
+165:       .overlay.open { display: block; opacity: 1; pointer-events: auto; }
+166:     }
+167:   `}</style>
+168: );
+169: 
+170: // â”€â”€â”€ DESIGN TOKENS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+171: 
+172: const C = {
+173:   bg: "#0d1117",
+174:   sidebar: "#161b22",
+175:   card: "#21262d",
+176:   cardB: "#30363d",
+177:   accent: "#58a6ff",
+178:   accentG: "#3d88e8",
+179:   text: "#e6edf3",
+180:   muted: "#8b949e",
+181:   border: "#30363d",
+182:   ok: "#3fb950",
+183:   err: "#f85149",
+184:   warn: "#d29922",
+185:   purple: "#bc8cff",
+186: };
+187: 
+188: const S = {
+189:   card: { background: C.card, borderRadius: 10, padding: "18px 20px", border: `1px solid ${C.border}` },
+190:   input: {
+191:     background: "#0d1117", border: `1px solid ${C.border}`, borderRadius: 7,
+192:     padding: "7px 12px", color: C.text, fontSize: 13, outline: "none"
+193:   },
+194:   sel: {
+195:     background: "#0d1117", border: `1px solid ${C.border}`, borderRadius: 7,
+196:     padding: "7px 10px", color: C.text, fontSize: 13, outline: "none", cursor: "pointer"
+197:   },
+198:   btn: { border: "none", cursor: "pointer", borderRadius: 7, fontSize: 13, fontWeight: 600, padding: "7px 14px" },
+199:   badge: { display: "inline-block", padding: "2px 9px", borderRadius: 20, fontSize: 11, fontWeight: 700 },
+200:   grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 },
+201:   grid4: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 },
+202:   ttip: { background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12 },
+203: };
+204: 
+205: // â”€â”€â”€ SHARED MICRO COMPONENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+206: 
+207: function Badge({ val, thresholds }) {
+208:   const color = val >= (thresholds?.[0] ?? 90) ? C.ok : val >= (thresholds?.[1] ?? 75) ? C.warn : C.err;
+209:   return (
+210:     <span style={{ ...S.badge, background: `${color}22`, color }}>
+211:       {val}%
+212:     </span>
+213:   );
+214: }
+215: 
+216: function ProgressBar({ pct }) {
+217:   const color = pct >= 90 ? C.ok : pct >= 75 ? C.warn : C.err;
+218:   return (
+219:     <div style={{ background: C.border, borderRadius: 4, height: 6, overflow: "hidden" }}>
+220:       <div style={{ width: `${pct}%`, background: color, height: "100%", borderRadius: 4, transition: "width 0.6s ease" }} />
+221:     </div>
+222:   );
+223: }
+224: 
+225: function StatCard({ title, value, sub, color, icon }) {
+226:   return (
+227:     <div style={{ ...S.card, borderLeft: `3px solid ${color}` }}>
+228:       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+229:         <div>
+230:           <div style={{ color: C.muted, fontSize: 12, marginBottom: 6 }}>{title}</div>
+231:           <div style={{ fontSize: 26, fontWeight: 700, color }}>{value}</div>
+232:           {sub && <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>{sub}</div>}
+233:         </div>
+234:         <span style={{ fontSize: 24, opacity: 0.7 }}>{icon}</span>
+235:       </div>
+236:     </div>
+237:   );
+238: }
+239: 
+240: function NavItem({ icon, label, active, onClick }) {
+241:   return (
+242:     <button onClick={onClick} style={{
+243:       display: "flex", alignItems: "center", gap: 10, padding: "9px 18px",
+244:       width: "100%", textAlign: "left", border: "none", cursor: "pointer",
+245:       background: active ? `${C.accent}18` : "transparent",
+246:       borderLeft: `2px solid ${active ? C.accent : "transparent"}`,
+247:       color: active ? C.accent : C.muted,
+248:       fontSize: 13, fontWeight: active ? 600 : 400, transition: "all 0.15s",
+249:     }}>
+250:       <span style={{ fontSize: 14 }}>{icon}</span> {label}
+251:     </button>
+252:   );
+253: }
+254: 
+255: function PageHeader({ title, sub }) {
+256:   return (
+257:     <div style={{ marginBottom: 22 }}>
+258:       <h1 style={{ fontSize: 22, fontWeight: 700, color: C.text, margin: 0 }}>{title}</h1>
+259:       {sub && <p style={{ fontSize: 13, color: C.muted, margin: "4px 0 0" }}>{sub}</p>}
+260:     </div>
+261:   );
+262: }
+263: 
+264: function Label({ children }) {
+265:   return <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>{children}</div>;
+266: }
+267: 
+268: function Divider() {
+269:   return <div style={{ height: 1, background: C.border, margin: "14px 0" }} />;
+270: }
+271: 
+272: const TT = { contentStyle: S.ttip, cursor: false };
+273: 
+274: // â”€â”€â”€ ATTENDANCE HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+275: 
+276: function getAttStats(students, attendance, classFilter, sectionFilter, date) {
+277:   const classes = classFilter === "all" ? CLASSES : CLASSES.filter(c => c.id === classFilter);
+278:   const sections = sectionFilter === "all" ? SECTIONS : [sectionFilter];
+279:   let present = 0, total = 0;
+280:   classes.forEach(cls => sections.forEach(sec => {
+281:     const studs = students[`${cls.id}_${sec}`] || [];
+282:     total += studs.length;
+283:     const rec = attendance[`${date}_${cls.id}_${sec}`];
+284:     if (rec) present += rec.present.length;
+285:   }));
+286:   return { present, total, absent: total - present, pct: total > 0 ? Math.round(present / total * 100) : 0 };
+287: }
+288: 
+289: // â”€â”€â”€ DASHBOARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+290: 
+291: function Dashboard({ students, attendance }) {
+292:   const today = fmtDate(new Date());
+293:   const weekDates = useMemo(() => getWeekDates(today), [today]);
+294: 
+295:   const todayStats = useMemo(() => getAttStats(students, attendance, "all", "all", today), [students, attendance, today]);
+296: 
+297:   const totalStudents = useMemo(() => Object.values(students).reduce((a, b) => a + b.length, 0), [students]);
+298: 
+299:   const weekData = useMemo(() =>
+300:     weekDates.map(date => {
+301:       const s = getAttStats(students, attendance, "all", "all", date);
+302:       const d = new Date(date + "T00:00:00");
+303:       return { day: DAY_NAMES[d.getDay()], ...s };
+304:     }), [students, attendance, weekDates]);
+305: 
+306:   const classData = useMemo(() =>
+307:     CLASSES.map(cls => {
+308:       const s = getAttStats(students, attendance, cls.id, "all", today);
+309:       return { name: cls.label, ...s };
+310:     }), [students, attendance, today]);
+311: 
+312:   // Monthly trend (last 30 school days)
+313:   const monthTrend = useMemo(() => {
+314:     const pts = [];
+315:     const d = new Date();
+316:     while (pts.length < 22) {
+317:       const ds = fmtDate(d);
+318:       if (!isWeekend(ds)) {
+319:         const s = getAttStats(students, attendance, "all", "all", ds);
+320:         if (s.total > 0) pts.unshift({ label: `${d.getDate()} ${MONTHS[d.getMonth()]}`, pct: s.pct });
+321:       }
+322:       d.setDate(d.getDate() - 1);
+323:     }
+324:     return pts;
+325:   }, [students, attendance]);
+326: 
+327:   // Top absent classes today
+328:   const topAbsent = useMemo(() =>
+329:     classData.filter(c => c.total > 0).sort((a, b) => b.absent - a.absent).slice(0, 5),
+330:     [classData]);
+331: 
+332:   return (
+333:     <div>
+334:       <PageHeader title="Dashboard" sub={`Overview for ${today} â€” ${totalStudents} students enrolled across all classes`} />
+335: 
+336:       <div className="grid-4">
+337:         <StatCard title="Total Students" value={totalStudents} sub="All classes enrolled" color={C.accent} icon="ðŸ‘¨â€ðŸŽ“" />
+338:         <StatCard title="Present Today" value={todayStats.present} sub={`Out of ${todayStats.total}`} color={C.ok} icon="âœ…" />
+339:         <StatCard title="Absent Today" value={todayStats.absent} sub="Need follow-up" color={C.err} icon="âŒ" />
+340:         <StatCard title="Today's Rate" value={`${todayStats.pct}%`} sub="Overall attendance" color={C.warn} icon="ðŸ“Š" />
+341:       </div>
+342: 
+343:       <div className="grid-2" style={{ marginTop: 16  }}>
+344:         {/* Weekly area chart */}
+345:         <div style={S.card}>
+346:           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>This Week â€” Attendance %</div>
+347:           <ResponsiveContainer width="100%" height={190}>
+348:             <AreaChart data={weekData}>
+349:               <defs>
+350:                 <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
+351:                   <stop offset="5%" stopColor={C.accent} stopOpacity={0.35} />
+352:                   <stop offset="95%" stopColor={C.accent} stopOpacity={0} />
+353:                 </linearGradient>
+354:               </defs>
+355:               <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+356:               <XAxis dataKey="day" tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
+357:               <YAxis tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} domain={[60, 100]} />
+358:               <Tooltip {...TT} formatter={v => [`${v}%`, "Attendance"]} />
+359:               <Area type="monotone" dataKey="pct" stroke={C.accent} fill="url(#wg)" strokeWidth={2} dot={{ r: 3, fill: C.accent }} />
+360:             </AreaChart>
+361:           </ResponsiveContainer>
+362:         </div>
+363: 
+364:         {/* Pie summary */}
+365:         <div style={S.card}>
+366:           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Today's Breakdown</div>
+367:           <ResponsiveContainer width="100%" height={190}>
+368:             <PieChart>
+369:               <Pie data={[
+370:                 { name: "Present", value: todayStats.present },
+371:                 { name: "Absent", value: todayStats.absent },
+372:               ]} cx="50%" cy="50%" innerRadius={52} outerRadius={78} dataKey="value" paddingAngle={3}>
+373:                 <Cell fill={C.ok} />
+374:                 <Cell fill={C.err} />
+375:               </Pie>
+376:               <Tooltip {...TT} />
+377:               <Legend wrapperStyle={{ fontSize: 12 }} />
+378:             </PieChart>
+379:           </ResponsiveContainer>
+380:         </div>
+381:       </div>
+382: 
+383:       {/* 22-day trend */}
+384:       <div style={{ ...S.card, marginTop: 16 }}>
+385:         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>30-Day Attendance Trend</div>
+386:         <ResponsiveContainer width="100%" height={180}>
+387:           <LineChart data={monthTrend}>
+388:             <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+389:             <XAxis dataKey="label" tick={{ fill: C.muted, fontSize: 10 }} interval={4} axisLine={false} tickLine={false} />
+390:             <YAxis tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} domain={[60, 100]} />
+391:             <Tooltip {...TT} formatter={v => [`${v}%`, "Attendance"]} />
+392:             <Line type="monotone" dataKey="pct" stroke={C.purple} strokeWidth={2} dot={false} />
+393:           </LineChart>
+394:         </ResponsiveContainer>
+395:       </div>
+396: 
+397:       {/* Class-wise bar */}
+398:       <div style={{ ...S.card, marginTop: 16 }}>
+399:         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Today by Class â€” Present vs Absent</div>
+400:         <ResponsiveContainer width="100%" height={240}>
+401:           <BarChart data={classData} margin={{ top: 0, right: 10, left: -10, bottom: 0 }}>
+402:             <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+403:             <XAxis dataKey="name" tick={{ fill: C.muted, fontSize: 10 }} axisLine={false} tickLine={false} />
+404:             <YAxis tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
+405:             <Tooltip {...TT} />
+406:             <Bar dataKey="present" fill={C.ok} name="Present" radius={[3, 3, 0, 0]} stackId="a" />
+407:             <Bar dataKey="absent" fill={C.err} name="Absent" radius={[3, 3, 0, 0]} stackId="a" />
+408:           </BarChart>
+409:         </ResponsiveContainer>
+410:       </div>
+411: 
+412:       {/* Top absent today */}
+413:       <div style={{ ...S.card, marginTop: 16 }}>
+414:         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Highest Absences Today</div>
+415:         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+416:           {topAbsent.map(r => (
+417:             <div key={r.name} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+418:               <div style={{ width: 80, fontSize: 13, fontWeight: 600, color: C.text }}>{r.name}</div>
+419:               <div style={{ flex: 1 }}><ProgressBar pct={r.pct} /></div>
+420:               <div style={{ width: 36, textAlign: "right" }}><Badge val={r.pct} /></div>
+421:               <div style={{ width: 60, fontSize: 12, color: C.muted, textAlign: "right" }}>{r.absent} absent</div>
+422:             </div>
+423:           ))}
+424:         </div>
+425:       </div>
+426:     </div>
+427:   );
+428: }
+429: 
+430: // â”€â”€â”€ MARK ATTENDANCE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+431: 
+432: function MarkAttendance({ students, attendance, onSave }) {
+433:   const [cls, setCls] = useState(CLASSES[0].id);
+434:   const [sec, setSec] = useState("A");
+435:   const [date, setDate] = useState(fmtDate(new Date()));
+436:   const [marked, setMarked] = useState({});
+437:   const [search, setSearch] = useState("");
+438:   const [saved, setSaved] = useState(false);
+439: 
+440:   const attKey = `${date}_${cls}_${sec}`;
+441:   const studKey = `${cls}_${sec}`;
+442:   const studs = students[studKey] || [];
+443:   const visible = search
+444:     ? studs.filter(s => s.name.toLowerCase().includes(search.toLowerCase()) || String(s.rollNo).includes(search))
+445:     : studs;
+446: 
+447:   useEffect(() => {
+448:     const rec = attendance[attKey];
+449:     if (rec) {
+450:       const m = {};
+451:       rec.present.forEach(id => (m[id] = true));
+452:       setMarked(m);
+453:     } else {
+454:       const m = {};
+455:       studs.forEach(s => (m[s.id] = true));
+456:       setMarked(m);
+457:     }
+458:     setSaved(false);
+459:   }, [cls, sec, date]);
+460: 
+461:   const toggle = id => setMarked(p => ({ ...p, [id]: !p[id] }));
+462:   const markAll = () => { const m = {}; studs.forEach(s => (m[s.id] = true)); setMarked(m); };
+463:   const markNone = () => { const m = {}; studs.forEach(s => (m[s.id] = false)); setMarked(m); };
+464: 
+465:   const handleSave = () => {
+466:     const present = studs.filter(s => marked[s.id]).map(s => s.id);
+467:     onSave({ ...attendance, [attKey]: { date, classId: cls, section: sec, present } });
+468:     setSaved(true);
+469:     setTimeout(() => setSaved(false), 3000);
+470:   };
+471: 
+472:   const presentCount = studs.filter(s => marked[s.id]).length;
+473:   const pct = studs.length > 0 ? Math.round(presentCount / studs.length * 100) : 0;
+474: 
+475:   return (
+476:     <div>
+477:       <PageHeader title="Mark Attendance" sub="Select class, section and date, then mark each student" />
+478: 
+479:       {/* Controls row */}
+480:       <div style={{ ...S.card, marginBottom: 16 }}>
+481:         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "flex-end" }}>
+482:           <div>
+483:             <Label>Class</Label>
+484:             <select style={S.sel} value={cls} onChange={e => setCls(e.target.value)}>
+485:               {CLASSES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+486:             </select>
+487:           </div>
+488:           <div>
+489:             <Label>Section</Label>
+490:             <select style={S.sel} value={sec} onChange={e => setSec(e.target.value)}>
+491:               {SECTIONS.map(s => <option key={s} value={s}>Section {s}</option>)}
+492:             </select>
+493:           </div>
+494:           <div>
+495:             <Label>Date</Label>
+496:             <input type="date" style={{ ...S.input, cursor: "pointer" }} value={date} onChange={e => setDate(e.target.value)} />
+497:           </div>
+498:           <div style={{ flex: 1, minWidth: 160 }}>
+499:             <Label>Search Student</Label>
+500:             <input style={{ ...S.input, width: "100%", boxSizing: "border-box" }} placeholder="Name or roll noâ€¦" value={search} onChange={e => setSearch(e.target.value)} />
+501:           </div>
+502:           <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
+503:             <button style={{ ...S.btn, background: C.border, color: C.text }} onClick={markAll}>All Present</button>
+504:             <button style={{ ...S.btn, background: C.border, color: C.text }} onClick={markNone}>All Absent</button>
+505:             <button style={{ ...S.btn, background: saved ? C.ok : C.accent, color: "#fff", minWidth: 130 }} onClick={handleSave}>
+506:               {saved ? "âœ“ Saved!" : "Save Attendance"}
+507:             </button>
+508:           </div>
+509:         </div>
+510: 
+511:         <Divider />
+512:         <div style={{ display: "flex", gap: 28, fontSize: 13 }}>
+513:           <span><span style={{ color: C.muted }}>Total: </span><strong style={{ color: C.text }}>{studs.length}</strong></span>
+514:           <span><span style={{ color: C.muted }}>Present: </span><strong style={{ color: C.ok }}>{presentCount}</strong></span>
+515:           <span><span style={{ color: C.muted }}>Absent: </span><strong style={{ color: C.err }}>{studs.length - presentCount}</strong></span>
+516:           <span><span style={{ color: C.muted }}>Rate: </span><strong style={{ color: C.warn }}>{pct}%</strong></span>
+517:         </div>
+518:       </div>
+519: 
+520:       {/* Student grid */}
+521:       <div style={S.card}>
+522:         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>
+523:           {CLASSES.find(c => c.id === cls)?.label} â€” Section {sec}
+524:           <span style={{ color: C.muted, fontWeight: 400, marginLeft: 6 }}>({visible.length} students)</span>
+525:         </div>
+526:         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 8 }}>
+527:           {visible.map(student => {
+528:             const here = !!marked[student.id];
+529:             return (
+530:               <div key={student.id} onClick={() => toggle(student.id)} style={{
+531:                 display: "flex", alignItems: "center", gap: 11, padding: "10px 14px",
+532:                 borderRadius: 8, cursor: "pointer", transition: "all 0.15s",
+533:                 background: here ? `${C.ok}18` : `${C.err}12`,
+534:                 border: `1px solid ${here ? `${C.ok}44` : `${C.err}33`}`,
+535:               }}>
+536:                 <div style={{
+537:                   width: 26, height: 26, borderRadius: "50%", flexShrink: 0,
+538:                   background: here ? C.ok : C.err, display: "flex",
+539:                   alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff",
+540:                 }}>
+541:                   {here ? "âœ“" : "âœ—"}
+542:                 </div>
+543:                 <div style={{ flex: 1, minWidth: 0 }}>
+544:                   <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{student.name}</div>
+545:                   <div style={{ fontSize: 11, color: C.muted }}>Roll No: {student.rollNo}</div>
+546:                 </div>
+547:                 <span style={{ ...S.badge, background: here ? `${C.ok}22` : `${C.err}22`, color: here ? C.ok : C.err, flexShrink: 0 }}>
+548:                   {here ? "Present" : "Absent"}
+549:                 </span>
+550:               </div>
+551:             );
+552:           })}
+553:         </div>
+554:       </div>
+555:     </div>
+556:   );
+557: }
+558: 
+559: // â”€â”€â”€ STUDENTS PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+560: 
+561: function StudentsPage({ students, onSave }) {
+562:   const [cls, setCls] = useState(CLASSES[0].id);
+563:   const [sec, setSec] = useState("A");
+564:   const [newName, setNewName] = useState("");
+565:   const [search, setSearch] = useState("");
+566: 
+567:   const key = `${cls}_${sec}`;
+568:   const current = students[key] || [];
+569:   const visible = search
+570:     ? current.filter(s => s.name.toLowerCase().includes(search.toLowerCase()) || String(s.rollNo).includes(search))
+571:     : current;
+572: 
+573:   const addStudent = () => {
+574:     if (!newName.trim()) return;
+575:     const maxRoll = current.length > 0 ? Math.max(...current.map(s => s.rollNo)) : 0;
+576:     const updated = { ...students, [key]: [...current, { id: `s_${Date.now()}`, name: newName.trim(), rollNo: maxRoll + 1 }] };
+577:     onSave(updated);
+578:     setNewName("");
+579:   };
+580: 
+581:   const remove = id => onSave({ ...students, [key]: current.filter(s => s.id !== id) });
+582: 
+583:   return (
+584:     <div>
+585:       <PageHeader title="Student Management" sub="Add, view, or remove students per class and section" />
+586: 
+587:       <div style={{ ...S.card, marginBottom: 16 }}>
+588:         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "flex-end" }}>
+589:           <div><Label>Class</Label>
+590:             <select style={S.sel} value={cls} onChange={e => setCls(e.target.value)}>
+591:               {CLASSES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+592:             </select>
+593:           </div>
+594:           <div><Label>Section</Label>
+595:             <select style={S.sel} value={sec} onChange={e => setSec(e.target.value)}>
+596:               {SECTIONS.map(s => <option key={s} value={s}>Section {s}</option>)}
+597:             </select>
+598:           </div>
+599:           <div style={{ flex: 1, minWidth: 180 }}><Label>Search</Label>
+600:             <input style={{ ...S.input, width: "100%", boxSizing: "border-box" }} placeholder="Name or roll noâ€¦" value={search} onChange={e => setSearch(e.target.value)} />
+601:           </div>
+602:         </div>
+603:         <Divider />
+604:         <div style={{ display: "flex", gap: 10 }}>
+605:           <input
+606:             style={{ ...S.input, flex: 1 }}
+607:             placeholder="Enter full name to add new studentâ€¦"
+608:             value={newName}
+609:             onChange={e => setNewName(e.target.value)}
+610:             onKeyDown={e => e.key === "Enter" && addStudent()}
+611:           />
+612:           <button style={{ ...S.btn, background: C.accent, color: "#fff", whiteSpace: "nowrap" }} onClick={addStudent}>+ Add Student</button>
+613:         </div>
+614:       </div>
+615: 
+616:       <div style={S.card}>
+617:         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>
+618:           {CLASSES.find(c => c.id === cls)?.label} â€” Section {sec}
+619:           <span style={{ color: C.muted, fontWeight: 400, marginLeft: 6 }}>({visible.length} of {current.length})</span>
+620:         </div>
+621:         <table style={{ width: "100%", borderCollapse: "collapse" }}>
+622:           <thead>
+623:             <tr>
+624:               {["Roll No", "Student Name", "Class", "Section", "Action"].map(h => (
+625:                 <th key={h} style={{
+626:                   padding: "8px 12px", textAlign: "left", fontSize: 11, color: C.muted, fontWeight: 600,
+627:                   textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: `1px solid ${C.border}`
+628:                 }}>
+629:                   {h}
+630:                 </th>
+631:               ))}
+632:             </tr>
+633:           </thead>
+634:           <tbody>
+635:             {visible.map((s, i) => (
+636:               <tr key={s.id} style={{ background: i % 2 === 0 ? "transparent" : "#ffffff04" }}>
+637:                 <td style={{ padding: "9px 12px", fontSize: 13, color: C.muted }}>{s.rollNo}</td>
+638:                 <td style={{ padding: "9px 12px", fontSize: 13, fontWeight: 600 }}>{s.name}</td>
+639:                 <td style={{ padding: "9px 12px", fontSize: 13 }}>
+640:                   <span style={{ ...S.badge, background: `${C.accent}20`, color: C.accent }}>{CLASSES.find(c => c.id === cls)?.label}</span>
+641:                 </td>
+642:                 <td style={{ padding: "9px 12px", fontSize: 13 }}>
+643:                   <span style={{ ...S.badge, background: `${C.purple}20`, color: C.purple }}>Section {sec}</span>
+644:                 </td>
+645:                 <td style={{ padding: "9px 12px" }}>
+646:                   <button onClick={() => remove(s.id)} style={{ ...S.btn, background: `${C.err}20`, color: C.err, padding: "4px 12px", fontSize: 12 }}>Remove</button>
+647:                 </td>
+648:               </tr>
+649:             ))}
+650:             {visible.length === 0 && (
+651:               <tr><td colSpan={5} style={{ padding: "28px 12px", textAlign: "center", color: C.muted, fontSize: 13 }}>No students found</td></tr>
+652:             )}
+653:           </tbody>
+654:         </table>
+655:       </div>
+656:     </div>
+657:   );
+658: }
+659: 
+660: // â”€â”€â”€ REPORTS PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+661: 
+662: function ReportsPage({ students, attendance }) {
+663:   const today = fmtDate(new Date());
+664:   const todayD = new Date(today + "T00:00:00");
+665:   const [view, setView] = useState("weekly");
+666:   const [cls, setCls] = useState("all");
+667:   const [sec, setSec] = useState("all");
+668:   const [month, setMonth] = useState(todayD.getMonth());
+669:   const [year, setYear] = useState(todayD.getFullYear());
+670: 
+671:   // Build daily data for the selected month
+672:   const monthData = useMemo(() => {
+673:     const days = new Date(year, month + 1, 0).getDate();
+674:     const out = [];
+675:     for (let d = 1; d <= days; d++) {
+676:       const date = new Date(year, month, d);
+677:       const ds = fmtDate(date);
+678:       if (isWeekend(ds)) continue;
+679:       const s = getAttStats(students, attendance, cls, sec, ds);
+680:       out.push({ date: d, pct: s.pct, present: s.present, absent: s.absent, total: s.total });
+681:     }
+682:     return out;
+683:   }, [cls, sec, month, year, students, attendance]);
+684: 
+685:   // Weekly data (Mon-Fri of current/selected week)
+686:   const weekData = useMemo(() => {
+687:     const weekDates = getWeekDates(today);
+688:     return weekDates.map(ds => {
+689:       const s = getAttStats(students, attendance, cls, sec, ds);
+690:       const d = new Date(ds + "T00:00:00");
+691:       return { day: DAY_NAMES[d.getDay()], date: ds, ...s };
+692:     });
+693:   }, [cls, sec, students, attendance, today]);
+694: 
+695:   // Yearly monthly summary
+696:   const yearData = useMemo(() =>
+697:     MONTHS.map((m, mi) => {
+698:       const days = new Date(year, mi + 1, 0).getDate();
+699:       let tot = 0, pres = 0;
+700:       for (let d = 1; d <= days; d++) {
+701:         const ds = fmtDate(new Date(year, mi, d));
+702:         if (isWeekend(ds)) continue;
+703:         const s = getAttStats(students, attendance, cls, sec, ds);
+704:         if (s.total > 0) { tot += s.total; pres += s.present; }
+705:       }
+706:       return { month: m, pct: tot > 0 ? Math.round(pres / tot * 100) : 0, present: pres, absent: tot - pres };
+707:     }), [cls, sec, year, students, attendance]);
+708: 
+709:   const displayData = view === "weekly" ? weekData : view === "monthly" ? monthData : yearData;
+710:   const xKey = view === "weekly" ? "day" : view === "monthly" ? "date" : "month";
+711: 
+712:   return (
+713:     <div>
+714:       <PageHeader title="Reports & Analytics" sub="Filter by class, section, date range and view pattern" />
+715: 
+716:       {/* Filter bar */}
+717:       <div style={{ ...S.card, marginBottom: 16 }}>
+718:         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "flex-end" }}>
+719:           <div>
+720:             <Label>View</Label>
+721:             <div style={{ display: "flex", gap: 4 }}>
+722:               {[["weekly", "Weekly"], ["monthly", "Monthly"], ["yearly", "Yearly"]].map(([v, l]) => (
+723:                 <button key={v} onClick={() => setView(v)} style={{
+724:                   ...S.btn,
+725:                   background: view === v ? C.accent : C.border,
+726:                   color: view === v ? "#fff" : C.muted,
+727:                   padding: "6px 14px", fontSize: 12,
+728:                 }}>{l}</button>
+729:               ))}
+730:             </div>
+731:           </div>
+732:           <div><Label>Class</Label>
+733:             <select style={S.sel} value={cls} onChange={e => setCls(e.target.value)}>
+734:               <option value="all">All Classes</option>
+735:               {CLASSES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+736:             </select>
+737:           </div>
+738:           <div><Label>Section</Label>
+739:             <select style={S.sel} value={sec} onChange={e => setSec(e.target.value)}>
+740:               <option value="all">Both</option>
+741:               <option value="A">Section A</option>
+742:               <option value="B">Section B</option>
+743:             </select>
+744:           </div>
+745:           {view !== "yearly" && (
+746:             <div><Label>Month</Label>
+747:               <select style={S.sel} value={month} onChange={e => setMonth(Number(e.target.value))}>
+748:                 {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
+749:               </select>
+750:             </div>
+751:           )}
+752:           <div><Label>Year</Label>
+753:             <select style={S.sel} value={year} onChange={e => setYear(Number(e.target.value))}>
+754:               {[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+755:             </select>
+756:           </div>
+757:         </div>
+758:       </div>
+759: 
+760:       {/* Chart */}
+761:       <div style={{ ...S.card, marginBottom: 16 }}>
+762:         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>
+763:           {view === "weekly" ? "This Week" : view === "monthly" ? `${MONTHS[month]} ${year}` : `Year ${year}`} â€” Attendance %
+764:         </div>
+765:         <ResponsiveContainer width="100%" height={240}>
+766:           <BarChart data={displayData}>
+767:             <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+768:             <XAxis dataKey={xKey} tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
+769:             <YAxis tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} domain={[0, 100]} />
+770:             <Tooltip {...TT} formatter={v => [`${v}%`, "Attendance"]} />
+771:             <Bar dataKey="pct" radius={[4, 4, 0, 0]} name="Attendance %" fill={C.accent} />
+772:           </BarChart>
+773:         </ResponsiveContainer>
+774:       </div>
+775: 
+776:       {/* Stacked present/absent */}
+777:       <div style={{ ...S.card, marginBottom: 16 }}>
+778:         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Present vs Absent â€” Headcount</div>
+779:         <ResponsiveContainer width="100%" height={200}>
+780:           <BarChart data={displayData}>
+781:             <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+782:             <XAxis dataKey={xKey} tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
+783:             <YAxis tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
+784:             <Tooltip {...TT} />
+785:             <Bar dataKey="present" fill={C.ok} name="Present" stackId="x" radius={[0, 0, 0, 0]} />
+786:             <Bar dataKey="absent" fill={C.err} name="Absent" stackId="x" radius={[3, 3, 0, 0]} />
+787:           </BarChart>
+788:         </ResponsiveContainer>
+789:       </div>
+790: 
+791:       {/* Data table */}
+792:       <div style={S.card}>
+793:         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Detailed Data</div>
+794:         <div style={{ maxHeight: 320, overflowY: "auto" }}>
+795:           <table style={{ width: "100%", borderCollapse: "collapse" }}>
+796:             <thead style={{ position: "sticky", top: 0, background: C.card, zIndex: 1 }}>
+797:               <tr>
+798:                 {[view === "yearly" ? "Month" : view === "monthly" ? "Date" : "Day", "Present", "Absent", "Total", "Rate"].map(h => (
+799:                   <th key={h} style={{
+800:                     padding: "8px 12px", textAlign: "left", fontSize: 11, color: C.muted,
+801:                     fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em",
+802:                     borderBottom: `1px solid ${C.border}`
+803:                   }}>{h}</th>
+804:                 ))}
+805:               </tr>
+806:             </thead>
+807:             <tbody>
+808:               {displayData.filter(r => r.total > 0).map((r, i) => (
+809:                 <tr key={i} style={{ background: i % 2 ? "#ffffff04" : "transparent" }}>
+810:                   <td style={{ padding: "8px 12px", fontSize: 13, fontWeight: 500 }}>
+811:                     {view === "monthly" ? `${r.date} ${MONTHS[month]}` : r[xKey]}
+812:                   </td>
+813:                   <td style={{ padding: "8px 12px", fontSize: 13, color: C.ok, fontWeight: 600 }}>{r.present}</td>
+814:                   <td style={{ padding: "8px 12px", fontSize: 13, color: C.err, fontWeight: 600 }}>{r.absent}</td>
+815:                   <td style={{ padding: "8px 12px", fontSize: 13, color: C.muted }}>{r.total}</td>
+816:                   <td style={{ padding: "8px 12px" }}><Badge val={r.pct} /></td>
+817:                 </tr>
+818:               ))}
+819:             </tbody>
+820:           </table>
+821:         </div>
+822:       </div>
+823:     </div>
+824:   );
+825: }
+826: 
+827: // â”€â”€â”€ YEARLY VIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+828: 
+829: function YearlyView({ students, attendance }) {
+830:   const [year, setYear] = useState(new Date().getFullYear());
+831: 
+832:   const classAnnual = useMemo(() =>
+833:     CLASSES.map(cls => {
+834:       let pres = 0, tot = 0;
+835:       SECTIONS.forEach(sec => {
+836:         const studs = students[`${cls.id}_${sec}`] || [];
+837:         Object.entries(attendance).forEach(([key, rec]) => {
+838:           if (key.startsWith(String(year)) && key.includes(`_${cls.id}_${sec}`)) {
+839:             pres += rec.present.length;
+840:             tot += studs.length;
+841:           }
+842:         });
+843:       });
+844:       return { class: cls.label, pct: tot > 0 ? Math.round(pres / tot * 100) : 0 };
+845:     }), [year, students, attendance]);
+846: 
+847:   const monthlyForClasses = useMemo(() =>
+848:     MONTHS.map((m, mi) => {
+849:       const row = { month: m };
+850:       // Compare 3 key classes
+851:       ["nursery", "3", "6", "9", "12"].forEach(cid => {
+852:         const cls = CLASSES.find(c => c.id === cid);
+853:         if (!cls) return;
+854:         let pres = 0, tot = 0;
+855:         const days = new Date(year, mi + 1, 0).getDate();
+856:         for (let d = 1; d <= days; d++) {
+857:           const ds = fmtDate(new Date(year, mi, d));
+858:           if (isWeekend(ds)) continue;
+859:           const s = getAttStats(students, attendance, cid, "all", ds);
+860:           pres += s.present; tot += s.total;
+861:         }
+862:         row[cls.label] = tot > 0 ? Math.round(pres / tot * 100) : 0;
+863:       });
+864:       return row;
+865:     }), [year, students, attendance]);
+866: 
+867:   const colors = [C.accent, C.ok, C.warn, C.purple, C.err];
+868:   const compClasses = ["Nursery", "Class 3", "Class 6", "Class 9", "Class 12"];
+869: 
+870:   return (
+871:     <div>
+872:       <PageHeader title="Yearly Analysis" sub="Full academic year class-wise attendance breakdown" />
+873: 
+874:       <div style={{ ...S.card, marginBottom: 16, display: "inline-flex", alignItems: "center", gap: 12 }}>
+875:         <Label>Year</Label>
+876:         <select style={S.sel} value={year} onChange={e => setYear(Number(e.target.value))}>
+877:           {[2023, 2024, 2025, 2026].map(y => <option key={y}>{y}</option>)}
+878:         </select>
+879:       </div>
+880: 
+881:       {/* Horizontal bar: class attendance % */}
+882:       <div style={{ ...S.card, marginBottom: 16 }}>
+883:         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Annual Attendance Rate by Class â€” {year}</div>
+884:         <ResponsiveContainer width="100%" height={340}>
+885:           <BarChart data={classAnnual} layout="vertical" margin={{ left: 60 }}>
+886:             <CartesianGrid strokeDasharray="3 3" stroke={C.border} horizontal={false} />
+887:             <XAxis type="number" domain={[0, 100]} tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
+888:             <YAxis type="category" dataKey="class" tick={{ fill: C.text, fontSize: 12 }} width={70} axisLine={false} tickLine={false} />
+889:             <Tooltip {...TT} formatter={v => [`${v}%`, "Attendance"]} />
+890:             <Bar dataKey="pct" name="Attendance %" radius={[0, 4, 4, 0]}>
+891:               {classAnnual.map((e, i) => (
+892:                 <Cell key={i} fill={e.pct >= 90 ? C.ok : e.pct >= 75 ? C.warn : C.err} />
+893:               ))}
+894:             </Bar>
+895:           </BarChart>
+896:         </ResponsiveContainer>
+897:       </div>
+898: 
+899:       {/* Multi-line comparison */}
+900:       <div style={{ ...S.card, marginBottom: 16 }}>
+901:         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Month-wise Comparison (Key Classes) â€” {year}</div>
+902:         <ResponsiveContainer width="100%" height={220}>
+903:           <LineChart data={monthlyForClasses}>
+904:             <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
+905:             <XAxis dataKey="month" tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
+906:             <YAxis tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} domain={[60, 100]} />
+907:             <Tooltip {...TT} formatter={v => [`${v}%`, ""]} />
+908:             <Legend wrapperStyle={{ fontSize: 12 }} />
+909:             {compClasses.map((name, i) => (
+910:               <Line key={name} type="monotone" dataKey={name} stroke={colors[i]} strokeWidth={2} dot={false} />
+911:             ))}
+912:           </LineChart>
+913:         </ResponsiveContainer>
+914:       </div>
+915: 
+916:       {/* Summary table */}
+917:       <div style={S.card}>
+918:         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>All Classes Summary â€” {year}</div>
+919:         <table style={{ width: "100%", borderCollapse: "collapse" }}>
+920:           <thead>
+921:             <tr>
+922:               {["Class", "Annual Rate", "Progress", "Status"].map(h => (
+923:                 <th key={h} style={{
+924:                   padding: "8px 12px", textAlign: "left", fontSize: 11, color: C.muted,
+925:                   fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em",
+926:                   borderBottom: `1px solid ${C.border}`
+927:                 }}>{h}</th>
+928:               ))}
+929:             </tr>
+930:           </thead>
+931:           <tbody>
+932:             {classAnnual.map((r, i) => (
+933:               <tr key={i} style={{ background: i % 2 ? "#ffffff04" : "transparent" }}>
+934:                 <td style={{ padding: "10px 12px", fontWeight: 600, fontSize: 13 }}>{r.class}</td>
+935:                 <td style={{ padding: "10px 12px" }}><Badge val={r.pct} /></td>
+936:                 <td style={{ padding: "10px 12px", width: 200 }}><ProgressBar pct={r.pct} /></td>
+937:                 <td style={{ padding: "10px 12px" }}>
+938:                   <span style={{
+939:                     ...S.badge,
+940:                     background: r.pct >= 90 ? `${C.ok}22` : r.pct >= 75 ? `${C.warn}22` : `${C.err}22`,
+941:                     color: r.pct >= 90 ? C.ok : r.pct >= 75 ? C.warn : C.err
+942:                   }}>
+943:                     {r.pct >= 90 ? "Excellent" : r.pct >= 75 ? "Good" : "Needs Attention"}
+944:                   </span>
+945:                 </td>
+946:               </tr>
+947:             ))}
+948:           </tbody>
+949:         </table>
+950:       </div>
+951:     </div>
+952:   );
+953: }
+954: 
+955: // â”€â”€â”€ CLASS OVERVIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+956: 
+957: function ClassOverview({ students, attendance }) {
+958:   const today = fmtDate(new Date());
+959:   const [selDate, setSelDate] = useState(today);
+960: 
+961:   const data = useMemo(() =>
+962:     CLASSES.map(cls => {
+963:       const secs = SECTIONS.map(sec => {
+964:         const studs = students[`${cls.id}_${sec}`] || [];
+965:         const rec = attendance[`${selDate}_${cls.id}_${sec}`];
+966:         const pres = rec ? rec.present.length : 0;
+967:         return { sec, total: studs.length, present: pres, absent: studs.length - pres };
+968:       });
+969:       const total = secs.reduce((a, b) => a + b.total, 0);
+970:       const present = secs.reduce((a, b) => a + b.present, 0);
+971:       return {
+972:         cls: cls.label, secs, total, present, absent: total - present,
+973:         pct: total > 0 ? Math.round(present / total * 100) : 0
+974:       };
+975:     }), [students, attendance, selDate]);
+976: 
+977:   return (
+978:     <div>
+979:       <PageHeader title="Class Overview" sub="See all classes at a glance with section-wise breakdown" />
+980: 
+981:       <div style={{ ...S.card, marginBottom: 16, display: "inline-flex", alignItems: "center", gap: 12 }}>
+982:         <Label>Date</Label>
+983:         <input type="date" style={{ ...S.input, cursor: "pointer" }} value={selDate} onChange={e => setSelDate(e.target.value)} />
+984:       </div>
+985: 
+986:       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 14 }}>
+987:         {data.map(row => (
+988:           <div key={row.cls} style={S.card}>
+989:             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+990:               <div style={{ fontSize: 15, fontWeight: 700 }}>{row.cls}</div>
+991:               <Badge val={row.pct} />
+992:             </div>
+993: 
+994:             <div style={{ marginBottom: 10 }}>
+995:               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.muted, marginBottom: 4 }}>
+996:                 <span>Combined</span>
+997:                 <span>{row.present}/{row.total}</span>
+998:               </div>
+999:               <ProgressBar pct={row.pct} />
+1000:             </div>
+1001: 
+1002:             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+1003:               {row.secs.map(s => {
+1004:                 const p = s.total > 0 ? Math.round(s.present / s.total * 100) : 0;
+1005:                 return (
+1006:                   <div key={s.sec} style={{ background: "#ffffff08", borderRadius: 8, padding: "10px 12px" }}>
+1007:                     <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: C.accent }}>Section {s.sec}</div>
+1008:                     <div style={{ fontSize: 12, color: C.muted }}>Total: <strong style={{ color: C.text }}>{s.total}</strong></div>
+1009:                     <div style={{ fontSize: 12, color: C.ok }}>Present: <strong>{s.present}</strong></div>
+1010:                     <div style={{ fontSize: 12, color: C.err }}>Absent: <strong>{s.absent}</strong></div>
+1011:                     <div style={{ marginTop: 6 }}><ProgressBar pct={p} /></div>
+1012:                   </div>
+1013:                 );
+1014:               })}
+1015:             </div>
+1016:           </div>
+1017:         ))}
+1018:       </div>
+1019:     </div>
+1020:   );
+1021: }
+1022: 
+1023: // â”€â”€â”€ STUDENT PROFILE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+1024: 
+1025: function StudentProfile({ students, attendance }) {
+1026:   const [cls, setCls] = useState(CLASSES[0].id);
+1027:   const [sec, setSec] = useState("A");
+1028:   const [selId, setSelId] = useState("");
+1029:   const [search, setSearch] = useState("");
+1030: 
+1031:   const studs = students[`${cls}_${sec}`] || [];
+1032:   const visibleStuds = search
+1033:     ? studs.filter(s => s.name.toLowerCase().includes(search.toLowerCase()) || String(s.rollNo).includes(search))
+1034:     : studs;
+1035: 
+1036:   const selStudent = studs.find(s => s.id === selId) || studs[0];
+1037: 
+1038:   useEffect(() => {
+1039:     if (!studs.find(s => s.id === selId) && studs.length > 0) {
+1040:       setSelId(studs[0].id);
+1041:     }
+1042:   }, [cls, sec, studs, selId]);
+1043: 
+1044:   const stats = useMemo(() => {
+1045:     if (!selStudent) return null;
+1046:     let total = 0, present = 0;
+1047:     const absences = [];
+1048:     const monthly = {};
+1049: 
+1050:     MONTHS.forEach(m => monthly[m] = { month: m, total: 0, present: 0 });
+1051: 
+1052:     Object.values(attendance).forEach(rec => {
+1053:       if (rec.classId === cls && rec.section === sec) {
+1054:         total++;
+1055:         const pDate = new Date(rec.date + "T00:00:00");
+1056:         const mName = MONTHS[pDate.getMonth()];
+1057:         monthly[mName].total++;
+1058: 
+1059:         if (rec.present.includes(selStudent.id)) {
+1060:           present++;
+1061:           monthly[mName].present++;
+1062:         } else {
+1063:           absences.push(rec.date);
+1064:         }
+1065:       }
+1066:     });
+1067: 
+1068:     absences.sort((a, b) => new Date(b) - new Date(a));
+1069:     const absent = total - present;
+1070:     const pct = total > 0 ? Math.round(present / total * 100) : 0;
+1071: 
+1072:     const monthData = MONTHS.map(m => {
+1073:       const d = monthly[m];
+1074:       return { month: m, pct: d.total > 0 ? Math.round(d.present / d.total * 100) : 0, ...d };
+1075:     }).filter(d => d.total > 0);
+1076: 
+1077:     return { total, present, absent, pct, absences, monthData };
+1078:   }, [selStudent, cls, sec, attendance]);
+1079: 
+1080:   return (
+1081:     <div>
+1082:       <PageHeader title="Individual Student Data" sub="View detailed attendance stats and history for a specific student" />
+1083: 
+1084:       <div style={{ ...S.card, marginBottom: 16 }}>
+1085:         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "flex-end" }}>
+1086:           <div><Label>Class</Label>
+1087:             <select style={S.sel} value={cls} onChange={e => { setCls(e.target.value); setSearch(""); }}>
+1088:               {CLASSES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+1089:             </select>
+1090:           </div>
+1091:           <div><Label>Section</Label>
+1092:             <select style={S.sel} value={sec} onChange={e => { setSec(e.target.value); setSearch(""); }}>
+1093:               {SECTIONS.map(s => <option key={s} value={s}>Section {s}</option>)}
+1094:             </select>
+1095:           </div>
+1096:           <div style={{ flex: 1, minWidth: 180 }}><Label>Search</Label>
+1097:             <input style={{ ...S.input, width: "100%", boxSizing: "border-box" }} placeholder="Filter by name..." value={search} onChange={e => setSearch(e.target.value)} />
+1098:           </div>
+1099:           <div><Label>Student</Label>
+1100:             <select style={{ ...S.sel, minWidth: 200 }} value={selStudent?.id || ""} onChange={e => setSelId(e.target.value)}>
+1101:               {visibleStuds.map(s => <option key={s.id} value={s.id}>{s.name} (Roll: {s.rollNo})</option>)}
+1102:             </select>
+1103:           </div>
+1104:         </div>
+1105:       </div>
+1106: 
+1107:       {!selStudent ? (
+1108:         <div style={S.card}><div style={{ color: C.muted, padding: 20, textAlign: "center" }}>No students found in this section.</div></div>
+1109:       ) : stats ? (
+1110:         <>
+1111:           <div style={{ ...S.card, marginBottom: 16, display: "flex", alignItems: "center", gap: 20 }}>
+1112:             <div style={{ width: 64, height: 64, borderRadius: "50%", background: C.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 700, color: "#fff" }}>
+1113:               {selStudent.name.charAt(0)}
+1114:             </div>
+1115:             <div style={{ flex: 1 }}>
+1116:               <h2 style={{ margin: "0 0 4px", fontSize: 20, color: C.text }}>{selStudent.name}</h2>
+1117:               <div style={{ color: C.muted, fontSize: 13 }}>
+1118:                 Roll No: <strong style={{ color: C.text }}>{selStudent.rollNo}</strong> â€¢ {CLASSES.find(c => c.id === cls)?.label} â€” Section {sec}
+1119:               </div>
+1120:             </div>
+1121:             <div style={{ textAlign: "right" }}>
+1122:               <div style={{ fontSize: 28, fontWeight: 700, color: stats.pct >= 90 ? C.ok : stats.pct >= 75 ? C.warn : C.err }}>{stats.pct}%</div>
+1123:               <div style={{ fontSize: 12, color: C.muted }}>Overall Attendance</div>
+1124:             </div>
+1125:           </div>
+1126: 
+1127:           <div className="grid-4" style={{ marginBottom: 16  }}>
+1128:             <StatCard title="Total School Days" value={stats.total} color={C.accent} icon="ðŸ«" />
+1129:             <StatCard title="Days Present" value={stats.present} color={C.ok} icon="âœ…" />
+1130:             <StatCard title="Days Absent" value={stats.absent} color={C.err} icon="âŒ" />
+1131:             <div style={S.card}>
+1132:               <div style={{ fontSize: 12, color: C.muted, marginBottom: 6 }}>Status</div>
+1133:               <div style={{ fontSize: 18, fontWeight: 700, color: stats.pct >= 90 ? C.ok : stats.pct >= 75 ? C.warn : C.err }}>
+1134:                 {stats.pct >= 90 ? "Excellent" : stats.pct >= 75 ? "Needs Improvement" : "Critical Warning"}
+1135:               </div>
+1136:               <div style={{ marginTop: 8 }}><ProgressBar pct={stats.pct} /></div>
+1137:             </div>
+1138:           </div>
+1139: 
+1140:           <div className="grid-2" style={{ alignItems: "start"  }}>
+1141:             <div style={S.card}>
+1142:               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Monthly Performance</div>
+1143:               {stats.monthData.length > 0 ? (
+1144:                 <ResponsiveContainer width="100%" height={220}>
+1145:                   <BarChart data={stats.monthData}>
+1146:                     <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
+1147:                     <XAxis dataKey="month" tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
+1148:                     <YAxis tick={{ fill: C.muted, fontSize: 11 }} axisLine={false} tickLine={false} domain={[0, 100]} />
+1149:                     <Tooltip {...TT} formatter={v => [`${v}%`, "Attendance"]} />
+1150:                     <Bar dataKey="pct" radius={[4, 4, 0, 0]}>
+1151:                       {stats.monthData.map((e, i) => <Cell key={i} fill={e.pct >= 90 ? C.ok : e.pct >= 75 ? C.warn : C.err} />)}
+1152:                     </Bar>
+1153:                   </BarChart>
+1154:                 </ResponsiveContainer>
+1155:               ) : (
+1156:                 <div style={{ color: C.muted, fontSize: 13, padding: 20 }}>No monthly data available.</div>
+1157:               )}
+1158:             </div>
+1159: 
+1160:             <div style={S.card}>
+1161:               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Absence History</div>
+1162:               {stats.absences.length === 0 ? (
+1163:                 <div style={{ padding: 20, textAlign: "center", color: C.muted }}>No absences recorded. Perfect attendance! ðŸŽ‰</div>
+1164:               ) : (
+1165:                 <div style={{ maxHeight: 220, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+1166:                   {stats.absences.map(d => {
+1167:                     const absDate = new Date(d + "T00:00:00");
+1168:                     return (
+1169:                       <div key={d} style={{ display: "flex", justifyContent: "space-between", padding: "10px 14px", background: "#ffffff04", borderRadius: 6, border: `1px solid ${C.border}` }}>
+1170:                         <div style={{ color: C.text, fontSize: 13, fontWeight: 500 }}>{absDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</div>
+1171:                         <div style={{ color: C.err, fontSize: 12, fontWeight: 600 }}>Absent</div>
+1172:                       </div>
+1173:                     );
+1174:                   })}
+1175:                 </div>
+1176:               )}
+1177:             </div>
+1178:           </div>
+1179:         </>
+1180:       ) : null}
+1181:     </div>
+1182:   );
+1183: }
+1184: 
+1185: // â”€â”€â”€ ROOT APP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+1186: 
+1187: const firebaseConfig = {
+1188:   apiKey: "AIzaSyAeE4r7KKuyFwWp5Z-N5SYQiRsjiWZ4QwQ",
+1189:   authDomain: "flutter-ai-playground-d5855.firebaseapp.com",
+1190:   projectId: "flutter-ai-playground-d5855",
+1191:   storageBucket: "flutter-ai-playground-d5855.firebasestorage.app",
+1192:   messagingSenderId: "700259421993",
+1193:   appId: "1:700259421993:web:94bcc0b2a5ca16384af138"
+1194: };
+1195: 
+1196: let db = null;
+1197: if (typeof window !== "undefined" && window.firebase) {
+1198:   if (!window.firebase.apps.length) window.firebase.initializeApp(firebaseConfig);
+1199:   db = window.firebase.firestore();
+1200:   db.enablePersistence({ synchronizeTabs: true }).catch(err => console.warn("Caching error", err));
+1201: }
+1202: 
+1203: function LoadingOverlay() {
+1204:   return (
+1205:     <div style={{ position: "fixed", inset: 0, background: "rgba(13,17,23,0.7)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999, backdropFilter: "blur(2px)" }}>
+1206:       <div style={{ background: "#21262d", borderRadius: 10, padding: "18px 20px", border: "1px solid #30363d", display: "flex", alignItems: "center", gap: 16 }}>
+1207:         <div style={{ width: 22, height: 22, border: "3px solid #30363d", borderTopColor: "#58a6ff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+1208:         <span style={{ fontWeight: 600 }}>Loading Firebase...</span>
+1209:       </div>
+1210:     </div>
+1211:   );
+1212: }
+1213: 
+1214: function App() {
+1215:   const [user,    setUser]    = useState(null);
+1216:   const [page,    setPage]    = useState("dashboard");
+1217:   const [syncing, setSyncing] = useState(false);
+1218:   const [navOpen, setNavOpen] = useState(false);
+1219:   const [students, setStudents]     = useState(INIT_STUDENTS);
+1220:   const [attendance, setAttendance] = useState(INIT_ATTENDANCE);
+1221:   const [dbLoaded, setDbLoaded]     = useState(false);
+1222:   const [dbError, setDbError]       = useState("");
+1223: 
+1224:   useEffect(() => {
+1225:     if (!db) { setDbLoaded(true); return; } // Fallback if no firebase script
+1226:     setSyncing(true);
+1227:     let unsubS = () => {}, unsubA = () => {};
+1228:     
+1229:     // Subscribe to real-time updates from Firestore
+1230:     unsubS = db.collection("edutrack").doc("students_v2").onSnapshot(doc => {
+1231:       if (doc.exists) setStudents(doc.data().data);
+1232:       else db.collection("edutrack").doc("students_v2").set({ data: INIT_STUDENTS });
+1233:     }, err => { setDbError(err.message); setDbLoaded(true); });
+1234:     
+1235:     unsubA = db.collection("edutrack").doc("attendance_v2").onSnapshot(doc => {
+1236:       if (doc.exists) setAttendance(doc.data().data);
+1237:       else db.collection("edutrack").doc("attendance_v2").set({ data: INIT_ATTENDANCE });
+1238:       setDbLoaded(true);
+1239:       setSyncing(false);
+1240:     }, err => { setDbError(err.message); setDbLoaded(true); });
+1241:     
+1242:     return () => { unsubS(); unsubA(); };
+1243:   }, []);
+1244: 
+1245:   const saveStudents = async s => { 
+1246:     setStudents(s); 
+1247:     if (db) {
+1248:        setSyncing(true);
+1249:        await db.collection("edutrack").doc("students_v2").set({ data: s }); 
+1250:        setSyncing(false);
+1251:     }
+1252:   };
+1253:   
+1254:   const saveAttendance = async a => { 
+1255:     setAttendance(a); 
+1256:     if (db) {
+1257:        setSyncing(true);
+1258:        await db.collection("edutrack").doc("attendance_v2").set({ data: a }); 
+1259:        setSyncing(false);
+1260:     }
+1261:   };
+1262: 
+1263:   const totalStudents = useMemo(() => Object.values(students).reduce((acc, v) => acc + v.length, 0), [students]);
+1264:   const today = fmtDate(new Date());
+1265: 
+1266:   if (!dbLoaded) return <><GlobalStyles /><LoadingOverlay /></>;
+1267:   if (dbError) return (
+1268:     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: C.bg, color: C.text, padding: 20 }}>
+1269:       <div style={{ background: "#21262d", padding: "30px", borderRadius: 12, border: "2px solid #f85149", maxWidth: 600 }}>
+1270:          <h2 style={{ color: "#f85149", margin: "0 0 8px 0" }}>Firebase Connection Blocked</h2>
+1271:          <p style={{ margin: "0 0 16px 0", lineHeight: 1.5 }}>Your application is working perfectly, but a security setting in your <strong>Firebase Database</strong> is blocking the app from reading your data!</p>
+1272:          <p style={{ color: "#8b949e", fontSize: 13, background: "#0d1117", padding: 10, borderRadius: 6, margin: "0 0 20px 0" }}><i>Error: {dbError}</i></p>
+1273:          <p style={{ margin: "0 0 10px 0", fontWeight: 600 }}>To fix this instantly, login to your Firebase Console &rarr; Firestore Database &rarr; Rules, and paste EXACTLY this into the editor:</p>
+1274:          <pre style={{ background: "#0d1117", padding: "16px", borderRadius: 6, color: "#58a6ff", fontSize: 14, border: "1px solid #30363d", overflowX: "auto", margin: "0 0 20px 0" }}>{`service cloud.firestore {
+1275:   match /databases/{database}/documents {
+1276:     match /{document=**} {
+1277:       allow read, write: if true;
+1278:     }
+1279:   }
+1280: }`}</pre>
+1281:          <button onClick={() => window.location.reload()} style={{ background: "#58a6ff", color: "#fff", border: "none", padding: "12px", borderRadius: 6, cursor: "pointer", fontWeight: "bold", width: "100%", fontSize: 14 }}>I've published the new rules, Try Again!</button>
+1282:       </div>
+1283:     </div>
+1284:   );
+1285:   if (!user) return <><GlobalStyles /><LoginScreen onLogin={setUser} /></>;
+1286: 
+1287:   const nav = [
+1288:     { id: "dashboard", icon: "âŠž", label: "Dashboard" },
+1289:     { id: "mark", icon: "âœ”", label: "Mark Attendance" },
+1290:     { id: "students", icon: "â—Ž", label: "Students" },
+1291:     { id: "profile", icon: "ðŸ‘¤", label: "Student Profile" },
+1292:     { id: "reports", icon: "â–¦", label: "Reports" },
+1293:     { id: "yearly", icon: "â—ˆ", label: "Yearly View" },
+1294:     { id: "classes", icon: "â–¤", label: "Class Overview" },
+1295:   ];
+1296: 
+1297:   return (
+1298:     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif", fontSize: 14 }}>
+1299:       <GlobalStyles />
+1300:       {syncing && <LoadingOverlay />}
+1301: 
+1302:       {/* Mobile Top Header */}
+1303:       <div className="mobile-header">
+1304:          <div style={{ fontSize: 18, fontWeight: 800, color: C.accent, display: "flex", alignItems: "center", gap: 8 }}>
+1305:            <span style={{ fontSize: 20 }}>🏫</span> EduTrack Pro
+1306:          </div>
+1307:          <button onClick={() => setNavOpen(true)} style={{ background: "transparent", border: "none", color: C.text, fontSize: 24, cursor: "pointer", padding: 0 }}>☰</button>
+1308:       </div>
+1309: 
+1310:       {/* Mobile Overlay */}
+1311:       <div className={`overlay ${navOpen ? 'open' : ''}`} onClick={() => setNavOpen(false)} />
+1312: 
+1313:       <aside className={`app-sidebar ${navOpen ? 'open' : ''}`}>
+1314:         <div style={{ padding: "20px 18px 16px", borderBottom: `1px solid ${C.border}` }}>
+1315:           <div style={{ fontSize: 17, fontWeight: 800, color: C.accent, letterSpacing: -0.5, display: "flex", alignItems: "center", gap: 8 }}>
+1316:             <span style={{ fontSize: 20 }}>🏫</span> EduTrack Pro
+1317:           </div>
+1318:           <div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>School Attendance System</div>
+1319:         </div>
+1320: 
+1321:         <nav style={{ flex: 1, padding: "10px 0", overflowY: "auto" }}>
+1322:           {nav.map(({ id, icon, label }) => (
+1323:             <NavItem key={id} icon={icon} label={label} active={page === id} onClick={() => { setPage(id); setNavOpen(false); }} />
+1324:           ))}
+1325:         </nav>
+1326: 
+1327:         <div style={{ padding: "12px 18px", borderTop: `1px solid ${C.border}`, fontSize: 12, color: C.muted }}>
+1328:           <div style={{ marginBottom: 4 }}>ðŸ“š <strong style={{ color: C.text }}>{totalStudents}</strong> students enrolled</div>
+1329:           <div>ðŸ“… <strong style={{ color: C.text }}>{today}</strong></div>
+1330:         </div>
+1331:       </aside>
+1332: 
+1333:       {/* â”€â”€ Main content â”€â”€ */}
+1334:       <main key={page} className="page-transition app-main">
+1335:         {page === "dashboard" && <Dashboard students={students} attendance={attendance} user={user} />}
+1336:         {page === "mark" && <MarkAttendance students={students} attendance={attendance} onSave={saveAttendance} />}
+1337:         {page === "students" && <StudentsPage students={students} onSave={saveStudents} />}
+1338:         {page === "profile" && <StudentProfile students={students} attendance={attendance} />}
+1339:         {page === "reports" && <ReportsPage students={students} attendance={attendance} />}
+1340:         {page === "yearly" && <YearlyView students={students} attendance={attendance} />}
+1341:         {page === "classes" && <ClassOverview students={students} attendance={attendance} />}
+1342:       </main>
+1343:     </div>
+1344:   );
+1345: }
+1346: 
+1347: 
+1348: 
+1349:     const root = ReactDOM.createRoot(document.getElementById('root'));
+1350:     root.render(<App />);
+1351:   </script>
+1352: </body>
+1353: </html>

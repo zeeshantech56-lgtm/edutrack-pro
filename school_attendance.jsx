@@ -4,7 +4,7 @@ import {
   AreaChart, Area, PieChart, Pie, Cell, Legend, LineChart, Line
 } from "recharts";
 
-// â”€â”€â”€ CONSTANTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
 const CLASSES = [
   { id: "nursery", label: "Nursery" },
@@ -27,7 +27,7 @@ const LNAME = [
   "Agarwal", "Srivastava", "Pandey", "Kumar", "Chauhan", "Rathore", "Malhotra", "Kapoor", "Khan", "Ansari",
 ];
 
-// â”€â”€â”€ SEEDED RNG & UTILITIES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SEEDED RNG & UTILITIES ───────────────────────────────────────────────────
 
 function mkRand(seed) {
   let s = seed;
@@ -58,7 +58,7 @@ function getWeekDates(dateStr) {
   });
 }
 
-// â”€â”€â”€ SAMPLE DATA GENERATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SAMPLE DATA GENERATION ───────────────────────────────────────────────────
 
 const INIT_STUDENTS = (() => {
   const out = {};
@@ -144,7 +144,7 @@ const GlobalStyles = () => (
   `}</style>
 );
 
-// â”€â”€â”€ DESIGN TOKENS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
 
 const C = {
   bg: "#0d1117",
@@ -179,7 +179,7 @@ const S = {
   ttip: { background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12 },
 };
 
-// â”€â”€â”€ SHARED MICRO COMPONENTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SHARED MICRO COMPONENTS ──────────────────────────────────────────────────
 
 function Badge({ val, thresholds }) {
   const color = val >= (thresholds?.[0] ?? 90) ? C.ok : val >= (thresholds?.[1] ?? 75) ? C.warn : C.err;
@@ -248,7 +248,7 @@ function Divider() {
 
 const TT = { contentStyle: S.ttip, cursor: false };
 
-// â”€â”€â”€ ATTENDANCE HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── ATTENDANCE HELPERS ───────────────────────────────────────────────────────
 
 function getAttStats(students, attendance, classFilter, sectionFilter, date) {
   const classes = classFilter === "all" ? CLASSES : CLASSES.filter(c => c.id === classFilter);
@@ -263,7 +263,7 @@ function getAttStats(students, attendance, classFilter, sectionFilter, date) {
   return { present, total, absent: total - present, pct: total > 0 ? Math.round(present / total * 100) : 0 };
 }
 
-// â”€â”€â”€ DASHBOARD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
 
 function Dashboard({ students, attendance }) {
   const today = fmtDate(new Date());
@@ -308,19 +308,19 @@ function Dashboard({ students, attendance }) {
 
   return (
     <div>
-      <PageHeader title="Dashboard" sub={`Overview for ${today} â€” ${totalStudents} students enrolled across all classes`} />
+      <PageHeader title="Dashboard" sub={`Overview for ${today} &mdash; ${totalStudents} students enrolled across all classes`} />
 
       <div className="grid-4">
-        <StatCard title="Total Students" value={totalStudents} sub="All classes enrolled" color={C.accent} icon="ðŸ‘¨â€ðŸŽ“" />
-        <StatCard title="Present Today" value={todayStats.present} sub={`Out of ${todayStats.total}`} color={C.ok} icon="âœ…" />
-        <StatCard title="Absent Today" value={todayStats.absent} sub="Need follow-up" color={C.err} icon="âŒ" />
-        <StatCard title="Today's Rate" value={`${todayStats.pct}%`} sub="Overall attendance" color={C.warn} icon="ðŸ“Š" />
+        <StatCard title="Total Students" value={totalStudents} sub="All classes enrolled" color={C.accent} icon="&#127891;" />
+        <StatCard title="Present Today" value={todayStats.present} sub={`Out of ${todayStats.total}`} color={C.ok} icon="&#9989;" />
+        <StatCard title="Absent Today" value={todayStats.absent} sub="Need follow-up" color={C.err} icon="&#10060;" />
+        <StatCard title="Today's Rate" value={`${todayStats.pct}%`} sub="Overall attendance" color={C.warn} icon="&#128202;" />
       </div>
 
       <div className="grid-2" style={{ marginTop: 16  }}>
         {/* Weekly area chart */}
         <div style={S.card}>
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>This Week â€” Attendance %</div>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>This Week &mdash; Attendance %</div>
           <ResponsiveContainer width="100%" height={190}>
             <AreaChart data={weekData}>
               <defs>
@@ -373,7 +373,7 @@ function Dashboard({ students, attendance }) {
 
       {/* Class-wise bar */}
       <div style={{ ...S.card, marginTop: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Today by Class â€” Present vs Absent</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Today by Class &mdash; Present vs Absent</div>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={classData} margin={{ top: 0, right: 10, left: -10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
@@ -404,7 +404,7 @@ function Dashboard({ students, attendance }) {
   );
 }
 
-// â”€â”€â”€ MARK ATTENDANCE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── MARK ATTENDANCE ──────────────────────────────────────────────────────────
 
 function MarkAttendance({ students, attendance, onSave }) {
   const [cls, setCls] = useState(CLASSES[0].id);
@@ -474,13 +474,13 @@ function MarkAttendance({ students, attendance, onSave }) {
           </div>
           <div style={{ flex: 1, minWidth: 160 }}>
             <Label>Search Student</Label>
-            <input style={{ ...S.input, width: "100%", boxSizing: "border-box" }} placeholder="Name or roll noâ€¦" value={search} onChange={e => setSearch(e.target.value)} />
+            <input style={{ ...S.input, width: "100%", boxSizing: "border-box" }} placeholder="Name or roll no&hellip;" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
             <button style={{ ...S.btn, background: C.border, color: C.text }} onClick={markAll}>All Present</button>
             <button style={{ ...S.btn, background: C.border, color: C.text }} onClick={markNone}>All Absent</button>
             <button style={{ ...S.btn, background: saved ? C.ok : C.accent, color: "#fff", minWidth: 130 }} onClick={handleSave}>
-              {saved ? "âœ“ Saved!" : "Save Attendance"}
+              {saved ? "&#10003; Saved!" : "Save Attendance"}
             </button>
           </div>
         </div>
@@ -497,7 +497,7 @@ function MarkAttendance({ students, attendance, onSave }) {
       {/* Student grid */}
       <div style={S.card}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>
-          {CLASSES.find(c => c.id === cls)?.label} â€” Section {sec}
+          {CLASSES.find(c => c.id === cls)?.label} &mdash; Section {sec}
           <span style={{ color: C.muted, fontWeight: 400, marginLeft: 6 }}>({visible.length} students)</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 8 }}>
@@ -515,7 +515,7 @@ function MarkAttendance({ students, attendance, onSave }) {
                   background: here ? C.ok : C.err, display: "flex",
                   alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff",
                 }}>
-                  {here ? "âœ“" : "âœ—"}
+                  {here ? "&#10003;" : "&#10007;"}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{student.name}</div>
@@ -533,7 +533,7 @@ function MarkAttendance({ students, attendance, onSave }) {
   );
 }
 
-// â”€â”€â”€ STUDENTS PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── STUDENTS PAGE ────────────────────────────────────────────────────────────
 
 function StudentsPage({ students, onSave }) {
   const [cls, setCls] = useState(CLASSES[0].id);
@@ -574,14 +574,14 @@ function StudentsPage({ students, onSave }) {
             </select>
           </div>
           <div style={{ flex: 1, minWidth: 180 }}><Label>Search</Label>
-            <input style={{ ...S.input, width: "100%", boxSizing: "border-box" }} placeholder="Name or roll noâ€¦" value={search} onChange={e => setSearch(e.target.value)} />
+            <input style={{ ...S.input, width: "100%", boxSizing: "border-box" }} placeholder="Name or roll no&hellip;" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
         <Divider />
         <div style={{ display: "flex", gap: 10 }}>
           <input
             style={{ ...S.input, flex: 1 }}
-            placeholder="Enter full name to add new studentâ€¦"
+            placeholder="Enter full name to add new student&hellip;"
             value={newName}
             onChange={e => setNewName(e.target.value)}
             onKeyDown={e => e.key === "Enter" && addStudent()}
@@ -592,7 +592,7 @@ function StudentsPage({ students, onSave }) {
 
       <div style={S.card}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>
-          {CLASSES.find(c => c.id === cls)?.label} â€” Section {sec}
+          {CLASSES.find(c => c.id === cls)?.label} &mdash; Section {sec}
           <span style={{ color: C.muted, fontWeight: 400, marginLeft: 6 }}>({visible.length} of {current.length})</span>
         </div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -634,7 +634,7 @@ function StudentsPage({ students, onSave }) {
   );
 }
 
-// â”€â”€â”€ REPORTS PAGE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── REPORTS PAGE ─────────────────────────────────────────────────────────────
 
 function ReportsPage({ students, attendance }) {
   const today = fmtDate(new Date());
@@ -737,7 +737,7 @@ function ReportsPage({ students, attendance }) {
       {/* Chart */}
       <div style={{ ...S.card, marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>
-          {view === "weekly" ? "This Week" : view === "monthly" ? `${MONTHS[month]} ${year}` : `Year ${year}`} â€” Attendance %
+          {view === "weekly" ? "This Week" : view === "monthly" ? `${MONTHS[month]} ${year}` : `Year ${year}`} &mdash; Attendance %
         </div>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={displayData}>
@@ -752,7 +752,7 @@ function ReportsPage({ students, attendance }) {
 
       {/* Stacked present/absent */}
       <div style={{ ...S.card, marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Present vs Absent â€” Headcount</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Present vs Absent &mdash; Headcount</div>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={displayData}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
@@ -801,7 +801,7 @@ function ReportsPage({ students, attendance }) {
   );
 }
 
-// â”€â”€â”€ YEARLY VIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── YEARLY VIEW ──────────────────────────────────────────────────────────────
 
 function YearlyView({ students, attendance }) {
   const [year, setYear] = useState(new Date().getFullYear());
@@ -857,7 +857,7 @@ function YearlyView({ students, attendance }) {
 
       {/* Horizontal bar: class attendance % */}
       <div style={{ ...S.card, marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Annual Attendance Rate by Class â€” {year}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Annual Attendance Rate by Class &mdash; {year}</div>
         <ResponsiveContainer width="100%" height={340}>
           <BarChart data={classAnnual} layout="vertical" margin={{ left: 60 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.border} horizontal={false} />
@@ -875,7 +875,7 @@ function YearlyView({ students, attendance }) {
 
       {/* Multi-line comparison */}
       <div style={{ ...S.card, marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Month-wise Comparison (Key Classes) â€” {year}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Month-wise Comparison (Key Classes) &mdash; {year}</div>
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={monthlyForClasses}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
@@ -892,7 +892,7 @@ function YearlyView({ students, attendance }) {
 
       {/* Summary table */}
       <div style={S.card}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>All Classes Summary â€” {year}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>All Classes Summary &mdash; {year}</div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
@@ -929,7 +929,7 @@ function YearlyView({ students, attendance }) {
   );
 }
 
-// â”€â”€â”€ CLASS OVERVIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── CLASS OVERVIEW ───────────────────────────────────────────────────────────
 
 function ClassOverview({ students, attendance }) {
   const today = fmtDate(new Date());
@@ -997,7 +997,7 @@ function ClassOverview({ students, attendance }) {
   );
 }
 
-// â”€â”€â”€ STUDENT PROFILE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── STUDENT PROFILE ──────────────────────────────────────────────────────────
 
 function StudentProfile({ students, attendance }) {
   const [cls, setCls] = useState(CLASSES[0].id);
@@ -1092,7 +1092,7 @@ function StudentProfile({ students, attendance }) {
             <div style={{ flex: 1 }}>
               <h2 style={{ margin: "0 0 4px", fontSize: 20, color: C.text }}>{selStudent.name}</h2>
               <div style={{ color: C.muted, fontSize: 13 }}>
-                Roll No: <strong style={{ color: C.text }}>{selStudent.rollNo}</strong> â€¢ {CLASSES.find(c => c.id === cls)?.label} â€” Section {sec}
+                Roll No: <strong style={{ color: C.text }}>{selStudent.rollNo}</strong> â€¢ {CLASSES.find(c => c.id === cls)?.label} &mdash; Section {sec}
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
@@ -1102,9 +1102,9 @@ function StudentProfile({ students, attendance }) {
           </div>
 
           <div className="grid-4" style={{ marginBottom: 16  }}>
-            <StatCard title="Total School Days" value={stats.total} color={C.accent} icon="ðŸ«" />
-            <StatCard title="Days Present" value={stats.present} color={C.ok} icon="âœ…" />
-            <StatCard title="Days Absent" value={stats.absent} color={C.err} icon="âŒ" />
+            <StatCard title="Total School Days" value={stats.total} color={C.accent} icon="&#127979;" />
+            <StatCard title="Days Present" value={stats.present} color={C.ok} icon="&#9989;" />
+            <StatCard title="Days Absent" value={stats.absent} color={C.err} icon="&#10060;" />
             <div style={S.card}>
               <div style={{ fontSize: 12, color: C.muted, marginBottom: 6 }}>Status</div>
               <div style={{ fontSize: 18, fontWeight: 700, color: stats.pct >= 90 ? C.ok : stats.pct >= 75 ? C.warn : C.err }}>
@@ -1137,7 +1137,7 @@ function StudentProfile({ students, attendance }) {
             <div style={S.card}>
               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Absence History</div>
               {stats.absences.length === 0 ? (
-                <div style={{ padding: 20, textAlign: "center", color: C.muted }}>No absences recorded. Perfect attendance! ðŸŽ‰</div>
+                <div style={{ padding: 20, textAlign: "center", color: C.muted }}>No absences recorded. Perfect attendance! &#127881;</div>
               ) : (
                 <div style={{ maxHeight: 220, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
                   {stats.absences.map(d => {
@@ -1159,7 +1159,7 @@ function StudentProfile({ students, attendance }) {
   );
 }
 
-// â”€â”€â”€ ROOT APP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── ROOT APP ─────────────────────────────────────────────────────────────────
 
 const firebaseConfig = {
   apiKey: "AIzaSyAeE4r7KKuyFwWp5Z-N5SYQiRsjiWZ4QwQ",
@@ -1284,13 +1284,13 @@ export default function App() {
   if (!user) return <><GlobalStyles /><LoginScreen onLogin={setUser} /></>;
 
   const nav = [
-    { id: "dashboard", icon: "âŠž", label: "Dashboard" },
-    { id: "mark", icon: "âœ”", label: "Mark Attendance" },
-    { id: "students", icon: "â—Ž", label: "Students" },
-    { id: "profile", icon: "ðŸ‘¤", label: "Student Profile" },
-    { id: "reports", icon: "â–¦", label: "Reports" },
-    { id: "yearly", icon: "â—ˆ", label: "Yearly View" },
-    { id: "classes", icon: "â–¤", label: "Class Overview" },
+    { id: "dashboard", icon: "&#8862;", label: "Dashboard" },
+    { id: "mark", icon: "&#10004;", label: "Mark Attendance" },
+    { id: "students", icon: "&#9678;", label: "Students" },
+    { id: "profile", icon: "&#128100;", label: "Student Profile" },
+    { id: "reports", icon: "&#9638;", label: "Reports" },
+    { id: "yearly", icon: "&#9672;", label: "Yearly View" },
+    { id: "classes", icon: "&#9636;", label: "Class Overview" },
   ];
 
   return (
@@ -1301,9 +1301,9 @@ export default function App() {
       {/* Mobile Top Header */}
       <div className="mobile-header">
          <div style={{ fontSize: 18, fontWeight: 800, color: C.accent, display: "flex", alignItems: "center", gap: 8 }}>
-           <span style={{ fontSize: 20 }}>🏫</span> EduTrack Pro
+           <span style={{ fontSize: 20 }}>&#127979;</span> EduTrack Pro
          </div>
-         <button onClick={() => setNavOpen(true)} style={{ background: "transparent", border: "none", color: C.text, fontSize: 24, cursor: "pointer", padding: 0 }}>☰</button>
+         <button onClick={() => setNavOpen(true)} style={{ background: "transparent", border: "none", color: C.text, fontSize: 24, cursor: "pointer", padding: 0 }}>&#9776;</button>
       </div>
 
       {/* Mobile Overlay */}
@@ -1312,7 +1312,7 @@ export default function App() {
       <aside className={`app-sidebar ${navOpen ? 'open' : ''}`}>
         <div style={{ padding: "20px 18px 16px", borderBottom: `1px solid ${C.border}` }}>
           <div style={{ fontSize: 17, fontWeight: 800, color: C.accent, letterSpacing: -0.5, display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 20 }}>🏫</span> EduTrack Pro
+            <span style={{ fontSize: 20 }}>&#127979;</span> EduTrack Pro
           </div>
           <div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>School Attendance System</div>
         </div>
@@ -1324,12 +1324,12 @@ export default function App() {
         </nav>
 
         <div style={{ padding: "12px 18px", borderTop: `1px solid ${C.border}`, fontSize: 12, color: C.muted }}>
-          <div style={{ marginBottom: 4 }}>ðŸ“š <strong style={{ color: C.text }}>{totalStudents}</strong> students enrolled</div>
-          <div>ðŸ“… <strong style={{ color: C.text }}>{today}</strong></div>
+          <div style={{ marginBottom: 4 }}>&#128218; <strong style={{ color: C.text }}>{totalStudents}</strong> students enrolled</div>
+          <div>&#128197; <strong style={{ color: C.text }}>{today}</strong></div>
         </div>
       </aside>
 
-      {/* â”€â”€ Main content â”€â”€ */}
+      {/* ── Main content ── */}
       <main key={page} className="page-transition app-main">
         {page === "dashboard" && <Dashboard students={students} attendance={attendance} user={user} />}
         {page === "mark" && <MarkAttendance students={students} attendance={attendance} onSave={saveAttendance} />}

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>EduTrack Pro (Live)</title>
   
@@ -16,6 +16,37 @@
   
   <style>
     body { margin: 0; padding: 0; background: #0d1117; color: #e6edf3; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; overflow-x: hidden; }
+    
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .page-transition { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0d1117; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+
+    /* Responsive Grid */
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px; }
+    
+    @media (max-width: 1024px) {
+      .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .grid-4, .grid-2 { grid-template-columns: 1fr; }
+      .app-sidebar { position: fixed; left: -260px; top: 0; bottom: 0; z-index: 1000; transition: left 0.3s ease; }
+      .app-sidebar.open { left: 0; }
+      .app-main { padding: 16px !important; }
+      .mobile-header { display: flex !important; }
+    }
+
+    .mobile-header { display: none; height: 60px; background: #161b22; border-bottom: 1px solid #30363d; align-items: center; justify-content: space-between; padding: 0 16px; position: sticky; top: 0; z-index: 900; }
+    .app-sidebar { width: 260px; background: #161b22; border-right: 1px solid #30363d; display: flex; flexDirection: column; }
+    .app-main { flex: 1; padding: 24px; overflow-y: auto; max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
+    .overlay.open { display: block; }
   </style>
 </head>
 <body>
@@ -23,33 +54,14 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo, useCallback } = window.React;
     const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, Legend, LineChart, Line } = window.Recharts;
-    
-    class ErrorBoundary extends window.React.Component {
-      constructor(props) { super(props); this.state = { error: null, errorInfo: null }; }
-      static getDerivedStateFromError(error) { return { error }; }
-      componentDidCatch(error, errorInfo) { this.setState({ errorInfo }); console.error("Caught by ErrorBoundary:", error, errorInfo); }
-      render() {
-        if (this.state.error) {
-          return (
-            <div style={{ padding: 40, color: "#f85149", background: "#0d1117", minHeight: "100vh" }}>
-              <h2>Fatal React Error</h2>
-              <p style={{ color: "#e6edf3" }}>A massive crash occurred inside the application component.</p>
-              <pre style={{ whiteSpace: "pre-wrap", background: "#161b22", padding: 20, borderRadius: 8, border: "1px solid #f85149" }}>
-                {this.state.error.toString()}
-                {"\n"}
-                {this.state.errorInfo?.componentStack}
-              </pre>
-            </div>
-          );
-        }
-        return this.props.children;
-      }
-    }
-    
 
 
+    function LoadingOverlay() { return <div style={{ position: "fixed", inset: 0, background: "rgba(13,17,23,0.7)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999, backdropFilter: "blur(2px)" }}><div style={{ background: "#21262d", borderRadius: 10, padding: "18px 20px", border: "1px solid #30363d", display: "flex", alignItems: "center", gap: 16 }}><div style={{ width: 22, height: 22, border: "3px solid #30363d", borderTopColor: "#58a6ff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /><span style={{ fontWeight: 600 }}>Loading Firebase...</span></div></div>; }
+BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Area, PieChart, Pie, Cell, Legend, LineChart, Line
+} from "recharts";
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ CONSTANTS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
 const CLASSES = [
   { id: "nursery", label: "Nursery" },
@@ -72,7 +84,7 @@ const LNAME = [
   "Agarwal", "Srivastava", "Pandey", "Kumar", "Chauhan", "Rathore", "Malhotra", "Kapoor", "Khan", "Ansari",
 ];
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SEEDED RNG & UTILITIES Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── SEEDED RNG & UTILITIES ───────────────────────────────────────────────────
 
 function mkRand(seed) {
   let s = seed;
@@ -103,7 +115,7 @@ function getWeekDates(dateStr) {
   });
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SAMPLE DATA GENERATION Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── SAMPLE DATA GENERATION ───────────────────────────────────────────────────
 
 const INIT_STUDENTS = (() => {
   const out = {};
@@ -154,7 +166,7 @@ const INIT_ATTENDANCE = (() => {
   return att;
 })();
 
-// â”€â”€â”€ GLOBAL STYLES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── GLOBAL STYLES ────────────────────────────────────────────────────────────
 
 const GlobalStyles = () => (
   <style>{`
@@ -189,7 +201,7 @@ const GlobalStyles = () => (
   `}</style>
 );
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ DESIGN TOKENS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
 
 const C = {
   bg: "#0d1117",
@@ -224,7 +236,7 @@ const S = {
   ttip: { background: C.card, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12 },
 };
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ SHARED MICRO COMPONENTS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── SHARED MICRO COMPONENTS ──────────────────────────────────────────────────
 
 function Badge({ val, thresholds }) {
   const color = val >= (thresholds?.[0] ?? 90) ? C.ok : val >= (thresholds?.[1] ?? 75) ? C.warn : C.err;
@@ -293,7 +305,7 @@ function Divider() {
 
 const TT = { contentStyle: S.ttip, cursor: false };
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ ATTENDANCE HELPERS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── ATTENDANCE HELPERS ───────────────────────────────────────────────────────
 
 function getAttStats(students, attendance, classFilter, sectionFilter, date) {
   const classes = classFilter === "all" ? CLASSES : CLASSES.filter(c => c.id === classFilter);
@@ -308,7 +320,7 @@ function getAttStats(students, attendance, classFilter, sectionFilter, date) {
   return { present, total, absent: total - present, pct: total > 0 ? Math.round(present / total * 100) : 0 };
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ DASHBOARD Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
 
 function Dashboard({ students, attendance }) {
   const today = fmtDate(new Date());
@@ -353,19 +365,19 @@ function Dashboard({ students, attendance }) {
 
   return (
     <div>
-      <PageHeader title="Dashboard" sub={`Overview for ${today} Ã¢â‚¬â€ ${totalStudents} students enrolled across all classes`} />
+      <PageHeader title="Dashboard" sub={`Overview for ${today} &mdash; ${totalStudents} students enrolled across all classes`} />
 
       <div className="grid-4">
-        <StatCard title="Total Students" value={totalStudents} sub="All classes enrolled" color={C.accent} icon="Ã°Å¸â€˜Â¨Ã¢â‚¬ÂÃ°Å¸Å½â€œ" />
-        <StatCard title="Present Today" value={todayStats.present} sub={`Out of ${todayStats.total}`} color={C.ok} icon="Ã¢Å“â€¦" />
-        <StatCard title="Absent Today" value={todayStats.absent} sub="Need follow-up" color={C.err} icon="Ã¢ÂÅ’" />
-        <StatCard title="Today's Rate" value={`${todayStats.pct}%`} sub="Overall attendance" color={C.warn} icon="Ã°Å¸â€œÅ " />
+        <StatCard title="Total Students" value={totalStudents} sub="All classes enrolled" color={C.accent} icon="&#127891;" />
+        <StatCard title="Present Today" value={todayStats.present} sub={`Out of ${todayStats.total}`} color={C.ok} icon="&#9989;" />
+        <StatCard title="Absent Today" value={todayStats.absent} sub="Need follow-up" color={C.err} icon="&#10060;" />
+        <StatCard title="Today's Rate" value={`${todayStats.pct}%`} sub="Overall attendance" color={C.warn} icon="&#128202;" />
       </div>
 
       <div className="grid-2" style={{ marginTop: 16  }}>
         {/* Weekly area chart */}
         <div style={S.card}>
-          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>This Week Ã¢â‚¬â€ Attendance %</div>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>This Week &mdash; Attendance %</div>
           <ResponsiveContainer width="100%" height={190}>
             <AreaChart data={weekData}>
               <defs>
@@ -418,7 +430,7 @@ function Dashboard({ students, attendance }) {
 
       {/* Class-wise bar */}
       <div style={{ ...S.card, marginTop: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Today by Class Ã¢â‚¬â€ Present vs Absent</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Today by Class &mdash; Present vs Absent</div>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={classData} margin={{ top: 0, right: 10, left: -10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
@@ -449,7 +461,7 @@ function Dashboard({ students, attendance }) {
   );
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ MARK ATTENDANCE Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── MARK ATTENDANCE ──────────────────────────────────────────────────────────
 
 function MarkAttendance({ students, attendance, onSave }) {
   const [cls, setCls] = useState(CLASSES[0].id);
@@ -519,13 +531,13 @@ function MarkAttendance({ students, attendance, onSave }) {
           </div>
           <div style={{ flex: 1, minWidth: 160 }}>
             <Label>Search Student</Label>
-            <input style={{ ...S.input, width: "100%", boxSizing: "border-box" }} placeholder="Name or roll noÃ¢â‚¬Â¦" value={search} onChange={e => setSearch(e.target.value)} />
+            <input style={{ ...S.input, width: "100%", boxSizing: "border-box" }} placeholder="Name or roll no&hellip;" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
             <button style={{ ...S.btn, background: C.border, color: C.text }} onClick={markAll}>All Present</button>
             <button style={{ ...S.btn, background: C.border, color: C.text }} onClick={markNone}>All Absent</button>
             <button style={{ ...S.btn, background: saved ? C.ok : C.accent, color: "#fff", minWidth: 130 }} onClick={handleSave}>
-              {saved ? "Ã¢Å“â€œ Saved!" : "Save Attendance"}
+              {saved ? "&#10003; Saved!" : "Save Attendance"}
             </button>
           </div>
         </div>
@@ -542,7 +554,7 @@ function MarkAttendance({ students, attendance, onSave }) {
       {/* Student grid */}
       <div style={S.card}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>
-          {CLASSES.find(c => c.id === cls)?.label} Ã¢â‚¬â€ Section {sec}
+          {CLASSES.find(c => c.id === cls)?.label} &mdash; Section {sec}
           <span style={{ color: C.muted, fontWeight: 400, marginLeft: 6 }}>({visible.length} students)</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 8 }}>
@@ -560,7 +572,7 @@ function MarkAttendance({ students, attendance, onSave }) {
                   background: here ? C.ok : C.err, display: "flex",
                   alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#fff",
                 }}>
-                  {here ? "Ã¢Å“â€œ" : "Ã¢Å“â€”"}
+                  {here ? "&#10003;" : "&#10007;"}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{student.name}</div>
@@ -578,7 +590,7 @@ function MarkAttendance({ students, attendance, onSave }) {
   );
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ STUDENTS PAGE Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── STUDENTS PAGE ────────────────────────────────────────────────────────────
 
 function StudentsPage({ students, onSave }) {
   const [cls, setCls] = useState(CLASSES[0].id);
@@ -619,14 +631,14 @@ function StudentsPage({ students, onSave }) {
             </select>
           </div>
           <div style={{ flex: 1, minWidth: 180 }}><Label>Search</Label>
-            <input style={{ ...S.input, width: "100%", boxSizing: "border-box" }} placeholder="Name or roll noÃ¢â‚¬Â¦" value={search} onChange={e => setSearch(e.target.value)} />
+            <input style={{ ...S.input, width: "100%", boxSizing: "border-box" }} placeholder="Name or roll no&hellip;" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
         </div>
         <Divider />
         <div style={{ display: "flex", gap: 10 }}>
           <input
             style={{ ...S.input, flex: 1 }}
-            placeholder="Enter full name to add new studentÃ¢â‚¬Â¦"
+            placeholder="Enter full name to add new student&hellip;"
             value={newName}
             onChange={e => setNewName(e.target.value)}
             onKeyDown={e => e.key === "Enter" && addStudent()}
@@ -637,7 +649,7 @@ function StudentsPage({ students, onSave }) {
 
       <div style={S.card}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>
-          {CLASSES.find(c => c.id === cls)?.label} Ã¢â‚¬â€ Section {sec}
+          {CLASSES.find(c => c.id === cls)?.label} &mdash; Section {sec}
           <span style={{ color: C.muted, fontWeight: 400, marginLeft: 6 }}>({visible.length} of {current.length})</span>
         </div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -679,7 +691,7 @@ function StudentsPage({ students, onSave }) {
   );
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ REPORTS PAGE Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── REPORTS PAGE ─────────────────────────────────────────────────────────────
 
 function ReportsPage({ students, attendance }) {
   const today = fmtDate(new Date());
@@ -782,7 +794,7 @@ function ReportsPage({ students, attendance }) {
       {/* Chart */}
       <div style={{ ...S.card, marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>
-          {view === "weekly" ? "This Week" : view === "monthly" ? `${MONTHS[month]} ${year}` : `Year ${year}`} Ã¢â‚¬â€ Attendance %
+          {view === "weekly" ? "This Week" : view === "monthly" ? `${MONTHS[month]} ${year}` : `Year ${year}`} &mdash; Attendance %
         </div>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={displayData}>
@@ -797,7 +809,7 @@ function ReportsPage({ students, attendance }) {
 
       {/* Stacked present/absent */}
       <div style={{ ...S.card, marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Present vs Absent Ã¢â‚¬â€ Headcount</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Present vs Absent &mdash; Headcount</div>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={displayData}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
@@ -846,7 +858,7 @@ function ReportsPage({ students, attendance }) {
   );
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ YEARLY VIEW Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── YEARLY VIEW ──────────────────────────────────────────────────────────────
 
 function YearlyView({ students, attendance }) {
   const [year, setYear] = useState(new Date().getFullYear());
@@ -902,7 +914,7 @@ function YearlyView({ students, attendance }) {
 
       {/* Horizontal bar: class attendance % */}
       <div style={{ ...S.card, marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Annual Attendance Rate by Class Ã¢â‚¬â€ {year}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Annual Attendance Rate by Class &mdash; {year}</div>
         <ResponsiveContainer width="100%" height={340}>
           <BarChart data={classAnnual} layout="vertical" margin={{ left: 60 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.border} horizontal={false} />
@@ -920,7 +932,7 @@ function YearlyView({ students, attendance }) {
 
       {/* Multi-line comparison */}
       <div style={{ ...S.card, marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Month-wise Comparison (Key Classes) Ã¢â‚¬â€ {year}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Month-wise Comparison (Key Classes) &mdash; {year}</div>
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={monthlyForClasses}>
             <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
@@ -937,7 +949,7 @@ function YearlyView({ students, attendance }) {
 
       {/* Summary table */}
       <div style={S.card}>
-        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>All Classes Summary Ã¢â‚¬â€ {year}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>All Classes Summary &mdash; {year}</div>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
@@ -974,7 +986,7 @@ function YearlyView({ students, attendance }) {
   );
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ CLASS OVERVIEW Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── CLASS OVERVIEW ───────────────────────────────────────────────────────────
 
 function ClassOverview({ students, attendance }) {
   const today = fmtDate(new Date());
@@ -1042,7 +1054,7 @@ function ClassOverview({ students, attendance }) {
   );
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ STUDENT PROFILE Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── STUDENT PROFILE ──────────────────────────────────────────────────────────
 
 function StudentProfile({ students, attendance }) {
   const [cls, setCls] = useState(CLASSES[0].id);
@@ -1137,7 +1149,7 @@ function StudentProfile({ students, attendance }) {
             <div style={{ flex: 1 }}>
               <h2 style={{ margin: "0 0 4px", fontSize: 20, color: C.text }}>{selStudent.name}</h2>
               <div style={{ color: C.muted, fontSize: 13 }}>
-                Roll No: <strong style={{ color: C.text }}>{selStudent.rollNo}</strong> Ã¢â‚¬Â¢ {CLASSES.find(c => c.id === cls)?.label} Ã¢â‚¬â€ Section {sec}
+                Roll No: <strong style={{ color: C.text }}>{selStudent.rollNo}</strong> â€¢ {CLASSES.find(c => c.id === cls)?.label} &mdash; Section {sec}
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
@@ -1147,9 +1159,9 @@ function StudentProfile({ students, attendance }) {
           </div>
 
           <div className="grid-4" style={{ marginBottom: 16  }}>
-            <StatCard title="Total School Days" value={stats.total} color={C.accent} icon="Ã°Å¸ÂÂ«" />
-            <StatCard title="Days Present" value={stats.present} color={C.ok} icon="Ã¢Å“â€¦" />
-            <StatCard title="Days Absent" value={stats.absent} color={C.err} icon="Ã¢ÂÅ’" />
+            <StatCard title="Total School Days" value={stats.total} color={C.accent} icon="&#127979;" />
+            <StatCard title="Days Present" value={stats.present} color={C.ok} icon="&#9989;" />
+            <StatCard title="Days Absent" value={stats.absent} color={C.err} icon="&#10060;" />
             <div style={S.card}>
               <div style={{ fontSize: 12, color: C.muted, marginBottom: 6 }}>Status</div>
               <div style={{ fontSize: 18, fontWeight: 700, color: stats.pct >= 90 ? C.ok : stats.pct >= 75 ? C.warn : C.err }}>
@@ -1182,7 +1194,7 @@ function StudentProfile({ students, attendance }) {
             <div style={S.card}>
               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Absence History</div>
               {stats.absences.length === 0 ? (
-                <div style={{ padding: 20, textAlign: "center", color: C.muted }}>No absences recorded. Perfect attendance! Ã°Å¸Å½â€°</div>
+                <div style={{ padding: 20, textAlign: "center", color: C.muted }}>No absences recorded. Perfect attendance! &#127881;</div>
               ) : (
                 <div style={{ maxHeight: 220, overflowY: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
                   {stats.absences.map(d => {
@@ -1204,7 +1216,7 @@ function StudentProfile({ students, attendance }) {
   );
 }
 
-// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ ROOT APP Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+// ─── ROOT APP ─────────────────────────────────────────────────────────────────
 
 const firebaseConfig = {
   apiKey: "AIzaSyAeE4r7KKuyFwWp5Z-N5SYQiRsjiWZ4QwQ",
@@ -1329,13 +1341,13 @@ function App() {
   if (!user) return <><GlobalStyles /><LoginScreen onLogin={setUser} /></>;
 
   const nav = [
-    { id: "dashboard", icon: "Ã¢Å Å¾", label: "Dashboard" },
-    { id: "mark", icon: "Ã¢Å“â€", label: "Mark Attendance" },
-    { id: "students", icon: "Ã¢â€”Å½", label: "Students" },
-    { id: "profile", icon: "Ã°Å¸â€˜Â¤", label: "Student Profile" },
-    { id: "reports", icon: "Ã¢â€“Â¦", label: "Reports" },
-    { id: "yearly", icon: "Ã¢â€”Ë†", label: "Yearly View" },
-    { id: "classes", icon: "Ã¢â€“Â¤", label: "Class Overview" },
+    { id: "dashboard", icon: "&#8862;", label: "Dashboard" },
+    { id: "mark", icon: "&#10004;", label: "Mark Attendance" },
+    { id: "students", icon: "&#9678;", label: "Students" },
+    { id: "profile", icon: "&#128100;", label: "Student Profile" },
+    { id: "reports", icon: "&#9638;", label: "Reports" },
+    { id: "yearly", icon: "&#9672;", label: "Yearly View" },
+    { id: "classes", icon: "&#9636;", label: "Class Overview" },
   ];
 
   return (
@@ -1346,9 +1358,9 @@ function App() {
       {/* Mobile Top Header */}
       <div className="mobile-header">
          <div style={{ fontSize: 18, fontWeight: 800, color: C.accent, display: "flex", alignItems: "center", gap: 8 }}>
-           <span style={{ fontSize: 20 }}>ðŸ«</span> EduTrack Pro
+           <span style={{ fontSize: 20 }}>&#127979;</span> EduTrack Pro
          </div>
-         <button onClick={() => setNavOpen(true)} style={{ background: "transparent", border: "none", color: C.text, fontSize: 24, cursor: "pointer", padding: 0 }}>â˜°</button>
+         <button onClick={() => setNavOpen(true)} style={{ background: "transparent", border: "none", color: C.text, fontSize: 24, cursor: "pointer", padding: 0 }}>&#9776;</button>
       </div>
 
       {/* Mobile Overlay */}
@@ -1357,7 +1369,7 @@ function App() {
       <aside className={`app-sidebar ${navOpen ? 'open' : ''}`}>
         <div style={{ padding: "20px 18px 16px", borderBottom: `1px solid ${C.border}` }}>
           <div style={{ fontSize: 17, fontWeight: 800, color: C.accent, letterSpacing: -0.5, display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 20 }}>ðŸ«</span> EduTrack Pro
+            <span style={{ fontSize: 20 }}>&#127979;</span> EduTrack Pro
           </div>
           <div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>School Attendance System</div>
         </div>
@@ -1369,12 +1381,12 @@ function App() {
         </nav>
 
         <div style={{ padding: "12px 18px", borderTop: `1px solid ${C.border}`, fontSize: 12, color: C.muted }}>
-          <div style={{ marginBottom: 4 }}>Ã°Å¸â€œÅ¡ <strong style={{ color: C.text }}>{totalStudents}</strong> students enrolled</div>
-          <div>Ã°Å¸â€œâ€¦ <strong style={{ color: C.text }}>{today}</strong></div>
+          <div style={{ marginBottom: 4 }}>&#128218; <strong style={{ color: C.text }}>{totalStudents}</strong> students enrolled</div>
+          <div>&#128197; <strong style={{ color: C.text }}>{today}</strong></div>
         </div>
       </aside>
 
-      {/* Ã¢â€â‚¬Ã¢â€â‚¬ Main content Ã¢â€â‚¬Ã¢â€â‚¬ */}
+      {/* ── Main content ── */}
       <main key={page} className="page-transition app-main">
         {page === "dashboard" && <Dashboard students={students} attendance={attendance} user={user} />}
         {page === "mark" && <MarkAttendance students={students} attendance={attendance} onSave={saveAttendance} />}
@@ -1387,11 +1399,8 @@ function App() {
     </div>
   );
 }
-
-
-
     const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<ErrorBoundary><App /></ErrorBoundary>);
-  </script>
+    root.render(<App />);
+</script>
 </body>
 </html>
